@@ -4,7 +4,6 @@
 # This version: Be able to move Students to different schools
 ######################################################################
 
-
 Add-Type -AssemblyName PresentationCore,PresentationFramework
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
@@ -131,7 +130,7 @@ function AddCasual{
         $loginName = ($fName + "." + $lName).ToLower()
 
         #Test to see if the user already exists
-        if(([ADSISearcher] "(sAMAccountName=$loginName)").FindOne() -ne $null){
+        if($null -ne ([ADSISearcher] "(sAMAccountName=$loginName)").FindOne()){
             [System.Windows.MessageBox]::Show("User already exists!") | Out-Null
             $SCForm.Dispose()
             AddCasual
@@ -146,7 +145,7 @@ function AddCasual{
         }
 
         #Test for empty boxes
-        if($fName -eq '' -or $lName -eq '' -or $empNumber -eq '' -or $jobPostfix -eq $null){
+        if($fName -eq '' -or $lName -eq '' -or $empNumber -eq '' -or $null -eq $jobPostfix){
             $ButtonType = [System.Windows.Forms.MessageBoxButtons]::OK
             $MessageIcon = [System.Windows.Forms.MessageBoxIcon]::Information
             $MessageBody = "Please fill out the form before pressing done"
@@ -168,7 +167,7 @@ function AddCasual{
         #Add user
          
         New-ADUser -Name $fullName  -Enabled $true -sAMAccountName $loginName -UserPrincipalName $loginEmail -AccountPassword(ConvertTo-SecureString $Global:defaultPass -AsPlainText -Force) -ChangePasswordAtLogon $true -Path $OUPath -EmployeeNumber $empNumber -GivenName $fName -Surname $lName -DisplayName $fullName -Description $desc -EmailAddress $displayEmail -Title $jobTitle -Department $dept -Company $Global:company -OtherAttributes @{'extensionAttribute3'=$employeeType}
-        if(([ADSISearcher] "(sAMAccountName=$loginName)").FindOne() -ne $null){
+        if($null -ne ([ADSISearcher] "(sAMAccountName=$loginName)").FindOne()){
             [System.Windows.MessageBox]::Show("Succesfully Added!") | Out-Null
             $SCForm.Dispose()
             MainMenu
@@ -334,7 +333,7 @@ function AddNotCasual{
         $loginName = ($fName + "." + $lName).ToLower()
 
         #Test to see if the user already exists
-        if(([ADSISearcher] "(sAMAccountName=$loginName)").FindOne() -ne $null){
+        if($null -ne ([ADSISearcher] "(sAMAccountName=$loginName)").FindOne()){
             [System.Windows.MessageBox]::Show("User already exists!") | Out-Null
             $Form.Dispose()
             AddNotCasual
@@ -360,7 +359,7 @@ function AddNotCasual{
         $jobTitle = $jobList.Text
         $employeeType = $employeeTypeList.SelectedItem
 
-        if($fName -eq '' -or $lName -eq '' -or $empNumber -eq '' -or $OUBasePath -eq $null -or $jobTitle -eq '' -or $dept -eq $null -or $employeeType -eq ''){
+        if($fName -eq '' -or $lName -eq '' -or $empNumber -eq '' -or $null -eq $OUBasePath -or $jobTitle -eq '' -or $null -eq $dept -or $employeeType -eq ''){
             $ButtonType = [System.Windows.Forms.MessageBoxButtons]::OK
             $MessageIcon = [System.Windows.Forms.MessageBoxIcon]::Information
             $MessageBody = "Please fill out the form before pressing done"
@@ -373,7 +372,7 @@ function AddNotCasual{
 
         #Add user
         New-ADUser -Name $fullName -Enabled $true -sAMAccountName $loginName -UserPrincipalName $loginEmail -AccountPassword(ConvertTo-SecureString $Global:defaultPass -AsPlainText -Force) -ChangePasswordAtLogon $true -Path $OUBasePath -EmployeeNumber $empNumber -GivenName $fName -Surname $lName -DisplayName $fullName -Description $desc -EmailAddress $displayEmail -Title $jobTitle -Department $dept -Company $Global:company -OtherAttributes @{'extensionAttribute3'=$employeeType}
-        if(([ADSISearcher] "(sAMAccountName=$loginName)").FindOne() -ne $null){
+        if($null -ne ([ADSISearcher] "(sAMAccountName=$loginName)").FindOne()){
             [System.Windows.MessageBox]::Show("Succesfully Added!") | Out-Null
             $Form.Dispose()
             MainMenu 
@@ -455,25 +454,25 @@ function GetUserWithName($queryName){
     $UserQuery = Get-ADUser -Filter "Name -eq '$queryName'" -Properties *
 
     #Get Properties
-    $DisplayName = $UserQuery | select -expand DisplayName
-    $fName = $UserQuery | select -expand GivenName
-    $lName =  $UserQuery | select -expand Surname
-    $employeeNo = $UserQuery | select -expand EmployeeNumber
-    $employeeType = $UserQuery | select -expand extensionAttribute3
-    $jobTitle = $UserQuery | select -expand Title
-    $email = $UserQuery | select -expand UserPrincipalName
-    $logonName = $UserQuery | select -expand sAMAccountName
+    #$DisplayName = $UserQuery | Select-Object -expand DisplayName
+    $fName = $UserQuery | Select-Object -expand GivenName
+    $lName =  $UserQuery | Select-Object -expand Surname
+    $employeeNo = $UserQuery | Select-Object -expand EmployeeNumber
+    $employeeType = $UserQuery | Select-Object -expand extensionAttribute3
+    $jobTitle = $UserQuery | Select-Object -expand Title
+    $email = $UserQuery | Select-Object -expand UserPrincipalName
+    $logonName = $UserQuery | Select-Object -expand sAMAccountName
 
-    $comp =  $UserQuery | select -expand Company
-    $dept = $UserQuery | select -expand Department
-    $desc = $UserQuery | select -expand Description
-    $loc = $UserQuery | select -expand CanonicalName
-    $lastLogonDate = $UserQuery | select -expand LastLogonDate
+    $comp =  $UserQuery | Select-Object -expand Company
+    $dept = $UserQuery | Select-Object -expand Department
+    $desc = $UserQuery | Select-Object -expand Description
+    $loc = $UserQuery | Select-Object -expand CanonicalName
+    $lastLogonDate = $UserQuery | Select-Object -expand LastLogonDate
 
-    if($lastLogonDate -eq $null){
+    if($null -eq $lastLogonDate){
         $lastLogonDate = "N/A"
     }
-    $accountStatus = $UserQuery | select -expand enabled
+    $accountStatus = $UserQuery | Select-Object -expand enabled
     #Display user information
     [System.Windows.MessageBox]::Show(
 	    "Name: " + $fName + " " + $lName + "`n" +
@@ -505,8 +504,8 @@ function MarkOnLeave($queryName){
     $form.StartPosition = 'CenterScreen'
     $form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedSingle
 
-    $Name = Get-ADUser -Filter "Name -eq '$queryName'" -Properties *| select -expand Name
-    $oldTitle = Get-ADUser -Filter "Name -eq '$queryName'" -Properties * | select -expand Title
+    $Name = Get-ADUser -Filter "Name -eq '$queryName'" -Properties *| Select-Object -expand Name
+    $oldTitle = Get-ADUser -Filter "Name -eq '$queryName'" -Properties * | Select-Object -expand Title
     $initial = New-Object System.Windows.Forms.Label
     $initial.Location = New-Object System.Drawing.Point(10,20)
     $initial.Size = New-Object System.Drawing.Size(280,20)
@@ -518,10 +517,10 @@ function MarkOnLeave($queryName){
 
     #Set new title with postfix (On Leave)
     $setTitleAs = $oldTitle + " (On Leave)"
-    Get-ADUser -Filter "Name -like '$queryName'" | % {Set-ADUser $_ -Title ($setTitleAs)} 
+    Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object {Set-ADUser $_ -Title ($setTitleAs)} 
 
     #Get new title and show user difference
-    $newTitle = Get-ADUser -Filter "Name -eq '$queryName'" -Properties *| select -expand Title
+    $newTitle = Get-ADUser -Filter "Name -eq '$queryName'" -Properties *| Select-Object -expand Title
     $new = New-Object System.Windows.Forms.Label
     $new.Location = New-Object System.Drawing.Point(10,50)
     $new.Size = New-Object System.Drawing.Size(280,20)
@@ -544,7 +543,7 @@ function MarkOnLeave($queryName){
 }
 
 function RemoveOnLeave($queryName){
-    $oldTitle = Get-ADUser -Filter "Name -eq '$queryName'" -Properties * | select -expand Title
+    $oldTitle = Get-ADUser -Filter "Name -eq '$queryName'" -Properties * | Select-Object -expand Title
     if($oldTitle -notlike '*(On Leave)*'){
         [System.Windows.MessageBox]::Show("This user is NOT on leave") | Out-Null
         MainMenu
@@ -552,10 +551,10 @@ function RemoveOnLeave($queryName){
     }
     $newTitle = $oldTitle -replace "\(On Leave\)",''
     $newTitle = $newTitle.Trim()
-    Get-ADUser -Filter "Name -like '$queryName'" | % {Set-ADUser $_ -Title ($newTitle)}
+    Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object {Set-ADUser $_ -Title ($newTitle)}
 
     #Show user
-    $Name = Get-ADUser -Filter "Name -eq '$queryName'" -Properties * | select -expand Name
+    $Name = Get-ADUser -Filter "Name -eq '$queryName'" -Properties * | Select-Object -expand Name
     #Create the form
     $form = New-Object System.Windows.Forms.Form
     $form.Text = 'Mark On Leave'
@@ -569,7 +568,7 @@ function RemoveOnLeave($queryName){
     $initial.Text = 'Before: ' + $Name + " - " + $oldTitle
     $form.Controls.Add($initial)
 
-    $showTitle = Get-ADUser -Filter "Name -eq '$queryName'" -Properties *| select -expand Title
+    $showTitle = Get-ADUser -Filter "Name -eq '$queryName'" -Properties *| Select-Object -expand Title
     $new = New-Object System.Windows.Forms.Label
     $new.Location = New-Object System.Drawing.Point(10,50)
     $new.Size = New-Object System.Drawing.Size(280,20)
@@ -658,7 +657,7 @@ function LeaveMenu{
                 exit
 		    }
         }
-        $title = Get-ADUser -Filter "Name -eq '$queryName'" -Properties * | select -expand Title
+        $title = Get-ADUser -Filter "Name -eq '$queryName'" -Properties * | Select-Object -expand Title
         #Test if user is on leave
         if($title -like '*(On Leave)*'){
             [System.Windows.MessageBox]::Show("This user is already on leave") | Out-Null
@@ -682,7 +681,7 @@ function LeaveMenu{
                 exit
 		    }
         }
-        $title = Get-ADUser -Filter "Name -eq '$queryName'" -Properties * | select -expand Title
+        $title = Get-ADUser -Filter "Name -eq '$queryName'" -Properties * | Select-Object -expand Title
         if($title -notlike '*(On Leave)*'){
             [System.Windows.MessageBox]::Show("This user is NOT on leave") | Out-Null
             LeaveMenu
@@ -703,7 +702,7 @@ function MoveToDeletes($queryName){
     $del = "DEL"
 
     #check if user is already in deletes
-    $currPath = Get-ADUser -Filter "Name -eq 'Charles Test'" -Properties * | select -expand DistinguishedName
+    $currPath = Get-ADUser -Filter "Name -eq 'Charles Test'" -Properties * | Select-Object -expand DistinguishedName
     $checkPath = "CN=" + $queryName + "," + $moveToOU
     if($currPath -eq $checkPath){
         [System.Windows.MessageBox]::Show("User is already in " + $delDate) | Out-Null
@@ -712,16 +711,16 @@ function MoveToDeletes($queryName){
     }
 
     #Move user
-    Get-ADUser -Filter "Name -like '$queryName'" | % {Set-ADUser $_ -Department ($del)}
-    Get-ADUser -Filter "Name -like '$queryName'" | % {Set-ADUser $_ -Description ($null)}
-    Get-ADUser -Filter "Name -like '$queryName'" | % {Set-ADUser $_ -Company ($null)}
-    Get-ADUser -Filter "Name -like '$queryName'" | % {Set-ADUser $_ -Title ($null)}
-    Get-ADUser -Filter "Name -like '$queryName'" | % {Set-ADUser $_ -Clear "extensionattribute3"}
-    Get-ADUser -Filter "Name -like '$queryName'" | % {Disable-ADAccount $_} 
-    Get-ADUser -Filter "Name -like '$queryName'" | % {Move-ADObject $_ -TargetPath "$moveToOu"} 
+    Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object {Set-ADUser $_ -Department ($del)}
+    Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object {Set-ADUser $_ -Description ($null)}
+    Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object {Set-ADUser $_ -Company ($null)}
+    Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object {Set-ADUser $_ -Title ($null)}
+    Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object {Set-ADUser $_ -Clear "extensionattribute3"}
+    Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object {Disable-ADAccount $_} 
+    Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object {Move-ADObject $_ -TargetPath "$moveToOu"} 
 
     #check is succesfull
-    $newPath = Get-ADUser -Filter "Name -eq '$queryName'" -Properties * | select -expand DistinguishedName
+    $newPath = Get-ADUser -Filter "Name -eq '$queryName'" -Properties * | Select-Object -expand DistinguishedName
     $checkPath = "CN=" + $queryName + "," + $moveToOU
     if($newPath -ne $checkPath){
         [System.Windows.MessageBox]::Show("There was an Error moving user to " + $delDate) | Out-Null
@@ -804,7 +803,7 @@ function MoveToDeletesMenu{
 
 $getListOfUsers = {
     param ($query)
-    $queryResult =  Get-ADUser -Filter "Name -like '*$query*'" -Property *  | Sort-Object Name | select -expand Name
+    $queryResult =  Get-ADUser -Filter "Name -like '*$query*'" -Property *  | Sort-Object Name | Select-Object -expand Name
     if(-not ($queryResult)){
         return "No users found."
     }
@@ -825,11 +824,11 @@ function GetUserCount($query){
 
 function ResetToDefaultPass($queryName){
     #change password
-    Get-ADUser -Filter "Name -like '$queryName'" | % {Set-ADAccountPassword $_ -Reset -NewPassword (ConvertTo-SecureString -AsPlainText $Global:defaultPass -Force)}
+    Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object {Set-ADAccountPassword $_ -Reset -NewPassword (ConvertTo-SecureString -AsPlainText $Global:defaultPass -Force)}
     #unlock account
-    Get-ADUser -Filter "Name -like '$queryName'" | % {Unlock-ADAccount $_}
+    Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object {Unlock-ADAccount $_}
     #User must change password at next login
-    Get-ADUser -Filter "Name -like '$queryName'" | % {Set-ADUser $_ -ChangePasswordAtLogon $true}
+    Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object {Set-ADUser $_ -ChangePasswordAtLogon $true}
     [System.Windows.MessageBox]::Show("User's Password has been reset to Default!") | Out-Null
     MainMenu
 }
@@ -843,7 +842,7 @@ function ResetCustomPass($queryName){
    $form.StartPosition = 'CenterScreen'
 
    #Caption Label
-   $name = Get-ADUser -Filter "Name -like '$queryName'" -Properties *| select -expand Name
+   $name = Get-ADUser -Filter "Name -like '$queryName'" -Properties *| Select-Object -expand Name
    $captionLabel = New-Object System.Windows.Forms.label
    $captionLabel.Location = New-Object System.Drawing.Size(7,10)
    $captionLabel.Size = New-Object System.Drawing.Size(250,25)
@@ -917,16 +916,16 @@ function ResetCustomPass($queryName){
         try{
            $newPass = $repeatPassTextbox.Text
            #Set custom password
-           Get-ADUser -Filter "Name -like '$queryName'" | % {Set-ADAccountPassword $_ -Reset -NewPassword (ConvertTo-SecureString -AsPlainText $newPass -Force)}
+           Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object {Set-ADAccountPassword $_ -Reset -NewPassword (ConvertTo-SecureString -AsPlainText $newPass -Force)}
            
            #unlock account
-           Get-ADUser -Filter "Name -like '$queryName'" | % {Unlock-ADAccount $_}
+           Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object {Unlock-ADAccount $_}
            
            #want to change password at next login
            if($changePassCB.Checked){
-                Get-ADUser -Filter "Name -like '$queryName'" | % {Set-ADUser $_ -ChangePasswordAtLogon $true} 
+                Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object {Set-ADUser $_ -ChangePasswordAtLogon $true} 
            }else{
-                Get-ADUser -Filter "Name -like '$queryName'" | % {Set-ADUser $_ -ChangePasswordAtLogon $false}
+                Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object {Set-ADUser $_ -ChangePasswordAtLogon $false}
            }
            
            [System.Windows.MessageBox]::Show("$name's Password has been set to $newPass") | Out-Null
@@ -1061,9 +1060,9 @@ function MoveTo($queryName, $department, $OUPath, $path){
         $description = "$department Students"
     }
 
-    $title = Get-ADUser -Filter "Name -eq '$queryName'" -Properties *| select -expand Title
-    $empNo = Get-ADUser -Filter "Name -eq '$queryName'" -Properties *| select -expand EmployeeNumber
-    $empType = Get-ADUser -Filter "Name -eq '$queryName'" -Properties *| select -expand extensionAttribute3
+    $title = Get-ADUser -Filter "Name -eq '$queryName'" -Properties *| Select-Object -expand Title
+    $empNo = Get-ADUser -Filter "Name -eq '$queryName'" -Properties *| Select-Object -expand EmployeeNumber
+    $empType = Get-ADUser -Filter "Name -eq '$queryName'" -Properties *| Select-Object -expand extensionAttribute3
     
     #Show current properties and make some editable
    $form = New-Object System.Windows.Forms.Form
@@ -1197,18 +1196,18 @@ function MoveTo($queryName, $department, $OUPath, $path){
         Try{
             # Change user properties
             if($newJobTitle -ne ''){ #Not Students
-                Get-ADUser -Filter "Name -like '$queryName'" | % {Set-ADUser $_ -Title ($newJobTitle)}
+                Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object {Set-ADUser $_ -Title ($newJobTitle)}
             }
-            Get-ADUser -Filter "Name -like '$queryName'" | % {Set-ADUser $_ -Department ($newDepartment)}
-            Get-ADUser -Filter "Name -like '$queryName'" | % {Set-ADUser $_ -Description ($newDescription)}
-            Get-ADUser -Filter "Name -like '$queryName'" | % {Set-ADUser $_ -Company ($defaultComp)}
-            Get-ADUser -Filter "Name -like '$queryName'" | % {Set-ADUser $_ -EmployeeNumber ($newEmployeeNumber)}
-            Get-ADUser -Filter "Name -like '$queryName'" | % {Set-ADUser $_ -replace @{"extensionattribute3" = "$newEmployeeType"}}
-            Get-ADUser -Filter "Name -like '$queryName'" | % {Unlock-ADAccount $_}
-            Get-ADUser -Filter "Name -like '$queryName'" | % {Enable-ADAccount $_}
+            Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object {Set-ADUser $_ -Department ($newDepartment)}
+            Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object {Set-ADUser $_ -Description ($newDescription)}
+            Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object {Set-ADUser $_ -Company ($defaultComp)}
+            Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object {Set-ADUser $_ -EmployeeNumber ($newEmployeeNumber)}
+            Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object {Set-ADUser $_ -replace @{"extensionattribute3" = "$newEmployeeType"}}
+            Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object {Unlock-ADAccount $_}
+            Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object {Enable-ADAccount $_}
 
             # Move User
-            Get-ADUser -Filter "Name -like '$queryName'" | % {Move-ADObject $_ -TargetPath "$path"} 
+            Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object {Move-ADObject $_ -TargetPath "$path"} 
             
         }catch{
             [System.Windows.MessageBox]::Show("Uh oh. There was an error. Woopsies") | Out-Null
@@ -1234,7 +1233,7 @@ function MoveUser($queryName){
    $form.StartPosition = 'CenterScreen'
 
    #Caption Label
-   $name = Get-ADUser -Filter "Name -eq '$queryName'" -Properties *| select -expand Name
+   $name = Get-ADUser -Filter "Name -eq '$queryName'" -Properties *| Select-Object -expand Name
    $captionLabel = New-Object System.Windows.Forms.label
    $captionLabel.Location = New-Object System.Drawing.Size(7,10)
    $captionLabel.Size = New-Object System.Drawing.Size(200,25)
