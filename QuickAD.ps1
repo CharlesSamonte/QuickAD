@@ -10,11 +10,11 @@ Add-Type -AssemblyName System.Drawing
 
 ############################################################################
 #HELPER FUNCTIONS START HERE
-function userExist($queryName){
+function userNameExist($queryName){
     if((Get-ADUser -Filter "Name -eq '$queryName'").Count -eq 0){ #No user in AD
 		$queryName = $queryName.replace(' ','.')
 		if((Get-ADUser -Filter "Name -eq '$queryName'").Count -eq 0){
-			[System.Windows.MessageBox]::Show("No User with that name. dumb") | Out-Null
+			#[System.Windows.MessageBox]::Show("No User with that name. dumb") | Out-Null
 			return $false
 		}
     }
@@ -130,7 +130,7 @@ function AddCasual{
         $loginName = ($fName + "." + $lName).ToLower()
 
         #Test to see if the user already exists
-        if($null -ne ([ADSISearcher] "(sAMAccountName=$loginName)").FindOne()){
+        if(userNameExist($fullName)){
             [System.Windows.MessageBox]::Show("User already exists!") | Out-Null
             $SCForm.Dispose()
             AddCasual
@@ -138,11 +138,7 @@ function AddCasual{
         }
          
         $empNumber = ($empNoTextbox.Text).Trim()
-        if($jobList.SelectedIndex -eq 0){
-            $jobPostfix = "Staff"
-        } elseif ($jobList.SelectedIndex -eq 1){
-            $jobPostfix = "Teacher"
-        }
+        $jobPostfix = $jobList.SelectedItem.ToString() -replace "Substitute ", ""
 
         #Test for empty boxes
         if($fName -eq '' -or $lName -eq '' -or $empNumber -eq '' -or $null -eq $jobPostfix){
@@ -160,24 +156,24 @@ function AddCasual{
         $displayEmail = $fName + "." + $lName + "@gssd.ca"
         $loginEmail = $loginName + "@gssd.ca"
         $desc = "SUB " + $jobPostfix
-        $jobTitle = "Substitute " + $jobPostfix
+        $jobTitle = $jobList.SelectedItem.ToString()
         $dept = "SUB"
         $employeeType = "1"
 
         #Add user
-         
-        New-ADUser -Name $fullName  -Enabled $true -sAMAccountName $loginName -UserPrincipalName $loginEmail -AccountPassword(ConvertTo-SecureString $Global:defaultPass -AsPlainText -Force) -ChangePasswordAtLogon $true -Path $OUPath -EmployeeNumber $empNumber -GivenName $fName -Surname $lName -DisplayName $fullName -Description $desc -EmailAddress $displayEmail -Title $jobTitle -Department $dept -Company $Global:company -OtherAttributes @{'extensionAttribute3'=$employeeType}
-        if($null -ne ([ADSISearcher] "(sAMAccountName=$loginName)").FindOne()){
-            [System.Windows.MessageBox]::Show("Succesfully Added!") | Out-Null
-            $SCForm.Dispose()
-            MainMenu
-            exit
-        } else {
+        try{
+            New-ADUser -Name $fullName -Enabled $true -sAMAccountName $loginName -UserPrincipalName $loginEmail -AccountPassword(ConvertTo-SecureString $Global:defaultPass -AsPlainText -Force) -ChangePasswordAtLogon $true -Path $OUPath -EmployeeNumber $empNumber -GivenName $fName -Surname $lName -DisplayName $fullName -Description $desc -EmailAddress $displayEmail -Title $jobTitle -Department $dept -Company $Global:company -OtherAttributes @{'extensionAttribute3'=$employeeType}
+            if($null -ne ([ADSISearcher] "(sAMAccountName=$loginName)").FindOne()){
+                [System.Windows.MessageBox]::Show("Succesfully Added!") | Out-Null
+            }
+        } catch {
             [System.Windows.MessageBox]::Show("There was an Error creating the user!") | Out-Null
+        } finally{
             $SCForm.Dispose()
             MainMenu
             exit
         }
+
     } elseif($res -eq [System.Windows.Forms.DialogResult]::Abort){
         $SCForm.Close()
         AddUser
