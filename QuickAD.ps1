@@ -1726,7 +1726,11 @@ function MainMenu {
             if ($numberOfUsers -ne 0) {
                 $ShowNames.Items.AddRange("Loading $numberOfUsers User(s)...")
                 $userName = $findTextBox.Text
-                $users = Get-ADUser -Filter "Name -like '*$userName*'" -Property *  | Sort-Object Name | Select-Object -ExpandProperty Name
+
+                # $asyncResult = Start-Job -ScriptBlock $getListOfUsers -ArgumentList @($findTextBox.Text)
+                # $ShowNames.Text = $asyncResult | Receive-Job -Wait
+
+                $users = Get-ADUser -Filter "Name -like '*$userName*'" -Property *  | Sort-Object Name | Select-Object -ExpandProperty Name                
                 $ShowNames.Items.Clear()
                 $ShowNames.Items.AddRange($users)
                 $countLabel.Text = $numberOfUsers                 
@@ -1748,20 +1752,16 @@ function MainMenu {
     $countLabel.Text = '0'
     $form.Controls.Add($countLabel)
 
-    #These Names will be shown
-    # $ShowNames = New-Object System.Windows.Forms.RichTextBox 
-    # $ShowNames.Multiline = $True;
-    # $ShowNames.Location = New-Object System.Drawing.Size(305, 20) 
-    # $ShowNames.Size = New-Object System.Drawing.Size(215, 215)
-    # $ShowNames.Scrollbars = "Vertical"
-    # $ShowNames.Text = 'Nothing to see here...'
-    # $ShowNames.ReadOnly = $True
-    # $ShowNames.ForeColor = 'Gray'
-    # $ShowNames.Font = New-Object System.Drawing.Font("Lucida Console", 10, [System.Drawing.FontStyle]::Regular)
-    # $form.Controls.Add($ShowNames)
     $ShowNames = New-Object System.Windows.Forms.ListBox
     $ShowNames.Size = New-Object System.Drawing.Size(215, 215)
     $ShowNames.Location = New-Object System.Drawing.Size(305, 20) 
+    $disabledItem1 = "No Users Found."
+    $ShowNames.Add_SelectedIndexChanged({
+        $selectedItem = $ShowNames.SelectedItem
+        if ($selectedItem -ne $disabledItem1) {
+            $findTextBox.Text = $selectedItem
+        }
+    })
     $form.Controls.Add($ShowNames)
 
 
