@@ -86,11 +86,11 @@ function GetUserWithName($queryName) {
 
 $getListOfUsers = {
     param ($query)
-    $queryResult = Get-ADUser -Filter "Name -like '*$query*'" -Property *  | Sort-Object Name | Select-Object -expand Name
+    $queryResult = Get-ADUser -Filter "Name -like '*$query*'" -Property *  | Sort-Object Name | Select-Object -ExpandProperty Name
     if (-not ($queryResult)) {
         return "No users found."
     }
-    $queryResult = ($queryResult) -join "`r`n"
+    # $queryResult = ($queryResult) -join "`r`n"
     return $queryResult
 }
 
@@ -1718,23 +1718,23 @@ function MainMenu {
     $getUserListButton.Text = 'Show Users'
     $getUserListButton.Add_Click{
         if ($findTextBox.Text -ne "" -and $findTextBox.TextLength -gt 2) {
-            $ShowNames.Text = "Checking AD..."
-            
+            $ShowNames.Items.Clear()
+            $ShowNames.Items.AddRange("Checking AD...")
+
             #Count number of users
             $numberOfUsers = GetUserCount($findTextBox.Text)
             if ($numberOfUsers -ne 0) {
-                $ShowNames.ForeColor = 'Gray'
-                $ShowNames.Text = "Loading $numberOfUsers User(s)..." 
-
-                $asyncResult = Start-Job -ScriptBlock $getListOfUsers -ArgumentList @($findTextBox.Text)
-                $ShowNames.ForeColor = 'Black'
-                $ShowNames.Text = $asyncResult | Receive-Job -Wait
+                $ShowNames.Items.AddRange("Loading $numberOfUsers User(s)...")
+                $userName = $findTextBox.Text
+                $users = Get-ADUser -Filter "Name -like '*$userName*'" -Property *  | Sort-Object Name | Select-Object -ExpandProperty Name
+                $ShowNames.Items.Clear()
+                $ShowNames.Items.AddRange($users)
                 $countLabel.Text = $numberOfUsers                 
             }
             else {
-                $countLabel.Text = "0"
-                $ShowNames.ForeColor = 'Gray'
-                $ShowNames.Text = 'No Users found...'
+                $countLabel.Text = $numberOfUsers                 
+                $ShowNames.Items.Clear()
+                $ShowNames.Items.AddRange("No Users Found.")
             }
         }
     }
@@ -1749,16 +1749,21 @@ function MainMenu {
     $form.Controls.Add($countLabel)
 
     #These Names will be shown
-    $ShowNames = New-Object System.Windows.Forms.RichTextBox 
-    $ShowNames.Multiline = $True;
-    $ShowNames.Location = New-Object System.Drawing.Size(305, 20) 
+    # $ShowNames = New-Object System.Windows.Forms.RichTextBox 
+    # $ShowNames.Multiline = $True;
+    # $ShowNames.Location = New-Object System.Drawing.Size(305, 20) 
+    # $ShowNames.Size = New-Object System.Drawing.Size(215, 215)
+    # $ShowNames.Scrollbars = "Vertical"
+    # $ShowNames.Text = 'Nothing to see here...'
+    # $ShowNames.ReadOnly = $True
+    # $ShowNames.ForeColor = 'Gray'
+    # $ShowNames.Font = New-Object System.Drawing.Font("Lucida Console", 10, [System.Drawing.FontStyle]::Regular)
+    # $form.Controls.Add($ShowNames)
+    $ShowNames = New-Object System.Windows.Forms.ListBox
     $ShowNames.Size = New-Object System.Drawing.Size(215, 215)
-    $ShowNames.Scrollbars = "Vertical"
-    $ShowNames.Text = 'Nothing to see here...'
-    $ShowNames.ReadOnly = $True
-    $ShowNames.ForeColor = 'Gray'
-    $ShowNames.Font = New-Object System.Drawing.Font("Lucida Console", 10, [System.Drawing.FontStyle]::Regular)
+    $ShowNames.Location = New-Object System.Drawing.Size(305, 20) 
     $form.Controls.Add($ShowNames)
+
 
     #Horizontal line
     $lineLabel = New-Object System.Windows.Forms.Label
