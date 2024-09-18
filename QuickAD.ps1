@@ -82,6 +82,26 @@ function GetUserWithName($queryName) {
         , "User Information") | Out-Null #Box Title
 }
 
+#Get List of -like names
+
+$getListOfUsers = {
+    param ($query)
+    $queryResult = Get-ADUser -Filter "Name -like '*$query*'" -Property *  | Sort-Object Name | Select-Object -expand Name
+    if (-not ($queryResult)) {
+        return "No users found."
+    }
+    $queryResult = ($queryResult) -join "`r`n"
+    return $queryResult
+}
+
+function GetUserCount($query) {
+    $queryResult = ([array](Get-ADUser -Filter "Name -like '*$query*'")).Count
+    if ($queryResult -eq 0) {
+        return "No Users found."
+    }
+    return $queryResult
+}
+
 ############################################################################
 #ADDING NEW USER FUNCTIONS START HERE
 function AddCasual {
@@ -554,7 +574,7 @@ function MarkOnLeave($queryName) {
 function RemoveOnLeave($queryName) {
     $oldTitle = Get-ADUser -Filter "Name -eq '$queryName'" -Properties * | Select-Object -expand Title
     if ($oldTitle -notlike '*(On Leave)*') {
-        [System.Windows.MessageBox]::Show("This user is NOT on leave") | Out-Null
+        [System.Windows.MessageBox]::Show("This user is NOT on leave.") | Out-Null
         MainMenu
         exit
     }
@@ -655,10 +675,11 @@ function LeaveMenu {
     if ($result -eq [System.Windows.Forms.DialogResult]::Yes) {
         #Adding On Leave
         $queryName = $fTextBox.Text
+        $queryName = $queryName.Trim()
         #Test if user exists
         if ($queryName -eq "") {
             #Nothing entered
-            [System.Windows.MessageBox]::Show("Nothing entered. dumb") | Out-Null
+            [System.Windows.MessageBox]::Show("Nothing entered.") | Out-Null
             LeaveMenu
             exit
         }
@@ -666,7 +687,7 @@ function LeaveMenu {
             #No user in AD
             $queryName = $queryName.replace(' ', '.')
             if ((Get-ADUser -Filter "Name -eq '$queryName'").Count -eq 0) {
-                [System.Windows.MessageBox]::Show("No User with that name. dumb") | Out-Null
+                [System.Windows.MessageBox]::Show("Could not find a user with that name.") | Out-Null
                 LeaveMenu
                 exit
             }
@@ -674,7 +695,7 @@ function LeaveMenu {
         $title = Get-ADUser -Filter "Name -eq '$queryName'" -Properties * | Select-Object -expand Title
         #Test if user is on leave
         if ($title -like '*(On Leave)*') {
-            [System.Windows.MessageBox]::Show("This user is already on leave") | Out-Null
+            [System.Windows.MessageBox]::Show("This user is already on leave.") | Out-Null
             LeaveMenu
             exit
         }
@@ -684,10 +705,11 @@ function LeaveMenu {
     elseif ($result -eq [System.Windows.Forms.DialogResult]::No) {
         #Removing On LEave
         $queryName = $fTextBox.Text
+        $queryName = $queryName.Trim()
         #Test if user exists
         if ($queryName -eq "") {
             #Nothing entered
-            [System.Windows.MessageBox]::Show("Nothing entered. dumb") | Out-Null
+            [System.Windows.MessageBox]::Show("Nothing entered.") | Out-Null
             LeaveMenu
             exit
         }
@@ -695,7 +717,7 @@ function LeaveMenu {
             #No user in AD
             $queryName = $queryName.replace(' ', '.')
             if ((Get-ADUser -Filter "Name -eq '$queryName'").Count -eq 0) {
-                [System.Windows.MessageBox]::Show("No User with that name. dumb") | Out-Null
+                [System.Windows.MessageBox]::Show("No User with that name.") | Out-Null
                 LeaveMenu
                 exit
             }
@@ -722,7 +744,7 @@ function MoveToDeletes($queryName) {
     $del = "DEL"
 
     #check if user is already in deletes
-    $currPath = Get-ADUser -Filter "Name -eq 'Charles Test'" -Properties * | Select-Object -expand DistinguishedName
+    $currPath = Get-ADUser -Filter "Name -eq '$queryName'" -Properties * | Select-Object -expand DistinguishedName
     $checkPath = "CN=" + $queryName + "," + $moveToOU
     if ($currPath -eq $checkPath) {
         [System.Windows.MessageBox]::Show("User is already in " + $delDate) | Out-Null
@@ -823,27 +845,6 @@ function MoveToDeletesMenu {
         MainMenu
     }
     exit
-}
-
-############################################################################
-#Get List of -like names
-
-$getListOfUsers = {
-    param ($query)
-    $queryResult = Get-ADUser -Filter "Name -like '*$query*'" -Property *  | Sort-Object Name | Select-Object -expand Name
-    if (-not ($queryResult)) {
-        return "No users found."
-    }
-    $queryResult = ($queryResult) -join "`r`n"
-    return $queryResult
-}
-
-function GetUserCount($query) {
-    $queryResult = ([array](Get-ADUser -Filter "Name -like '*$query*'")).Count
-    if ($queryResult -eq 0) {
-        return "No Users found."
-    }
-    return $queryResult
 }
 
 ############################################################################
