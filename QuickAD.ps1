@@ -96,9 +96,6 @@ $getListOfUsers = {
 
 function GetUserCount($query) {
     $queryResult = ([array](Get-ADUser -Filter "Name -like '*$query*'")).Count
-    if ($queryResult -eq 0) {
-        return "No Users found."
-    }
     return $queryResult
 }
 
@@ -1257,7 +1254,7 @@ function MoveTo($queryName, $department, $OUPath, $path) {
             
         }
         catch {
-            [System.Windows.MessageBox]::Show("Uh oh. There was an error. Woopsies") | Out-Null
+            [System.Windows.MessageBox]::Show("Uh oh. There was an error.") | Out-Null
             MoveUserMenu
             exit
         }
@@ -1725,7 +1722,7 @@ function MainMenu {
             
             #Count number of users
             $numberOfUsers = GetUserCount($findTextBox.Text)
-            if ($numberOfUsers -ne 'No Users found.') {
+            if ($numberOfUsers -ne 0) {
                 $ShowNames.ForeColor = 'Gray'
                 $ShowNames.Text = "Loading $numberOfUsers User(s)..." 
 
