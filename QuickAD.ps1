@@ -15,7 +15,7 @@ function userNameExist($queryName) {
         #No user in AD
         $queryName = $queryName.replace(' ', '.')
         if ((Get-ADUser -Filter "Name -eq '$queryName'").Count -eq 0) {
-            #[System.Windows.MessageBox]::Show("No User with that name. dumb") | Out-Null
+            #[System.Windows.MessageBox]::Show("No User with that name.") | Out-Null
             return $false
         }
     }
@@ -80,18 +80,6 @@ function GetUserWithName($queryName) {
         "Enabled: " + $accountStatus
 	
         , "User Information") | Out-Null #Box Title
-}
-
-#Get List of -like names
-
-$getListOfUsers = {
-    param ($query)
-    $queryResult = Get-ADUser -Filter "Name -like '*$query*'" -Property *  | Sort-Object Name | Select-Object -ExpandProperty Name
-    if (-not ($queryResult)) {
-        return "No users found."
-    }
-    # $queryResult = ($queryResult) -join "`r`n"
-    return $queryResult
 }
 
 function GetUserCount($query) {
@@ -320,7 +308,7 @@ function AddNotCasual {
     $jobList.Size = New-Object System.Drawing.Size(120, 20)
     $jobList.location = New-Object System.Drawing.Point(100, 100)
     # Add the items in the dropdown list
-    @(‘Teacher’, 'Admin Assistant’, ’Ed. Assistant', 'Caretaker') | ForEach-Object { [void] $jobList.Items.Add($_) }
+    @(‘Teacher’, 'Admin Assistant’, ’Ed. Assistant', 'Caretaker', 'Bus Driver') | ForEach-Object { [void] $jobList.Items.Add($_) }
     $jobList.SelectedIndex = -1
     $Form.Controls.Add($jobList)
 
@@ -338,15 +326,27 @@ function AddNotCasual {
     $schoolList.location = New-Object System.Drawing.Point(100, 130)
     # Add the items in the dropdown list
     $Global:allDept | ForEach-Object { [void] $schoolList.Items.Add($_) }
+    $Global:allDeptInTrans | ForEach-Object { [void] $schoolList.Items.Add($_) }
+    $schoolList.Items.Remove("Spare Drivers")
     $schoolList.SelectedIndex = -1
     $Form.Controls.Add($schoolList)
     $schoolList.Add_SelectedIndexChanged{
         #Modify WhereInSchoolList with department change
-        $pathToOU = "OU=" + $schoolList.SelectedItem + ",OU=Schools,OU=GSSD Network,DC=GSSD,DC=ADS"
-        $OUinSchool = Get-ADOrganizationalUnit -Filter * -SearchBase "$pathToOU" -SearchScope OneLevel | Select-Object Name
-        $arrayOfOUInSchool = $OUinSchool.Name
-        $WhereInSchoolList.Items.Clear()
-        $arrayOfOUInSchool | ForEach-Object { [void] $WhereInSchoolList.Items.Add($_) }
+        if ($schoolList.SelectedItem -like '*Garage*') {
+            $pathToOU = "OU=" + $schoolList.SelectedItem + ",OU=Transportation,OU=Users,OU=Board Office,OU=GSSD Network,DC=GSSD,DC=ADS"
+            $OUinSchool = Get-ADOrganizationalUnit -Filter * -SearchBase "$pathToOU" -SearchScope OneLevel | Select-Object Name
+            $arrayOfOUInSchool = $OUinSchool.Name
+            $WhereInSchoolList.Items.Clear()
+            $arrayOfOUInSchool | ForEach-Object { [void] $WhereInSchoolList.Items.Add($_) }
+
+        }
+        else {
+            $pathToOU = "OU=" + $schoolList.SelectedItem + ",OU=Schools,OU=GSSD Network,DC=GSSD,DC=ADS"
+            $OUinSchool = Get-ADOrganizationalUnit -Filter * -SearchBase "$pathToOU" -SearchScope OneLevel | Select-Object Name
+            $arrayOfOUInSchool = $OUinSchool.Name
+            $WhereInSchoolList.Items.Clear()
+            $arrayOfOUInSchool | ForEach-Object { [void] $WhereInSchoolList.Items.Add($_) }
+        }
     }
 
     #WhereInSchool Label
@@ -414,10 +414,22 @@ function AddNotCasual {
         $fullName = $fName + " " + $lName
         $displayEmail = $fName + "." + $lName + "@gssd.ca"
         $loginEmail = $loginName + "@gssd.ca"
-        
+
+        $dept = $schoolList.SelectedItem
+        $desc = $dept + " " + $WhereInSchoolList.SelectedItem
+        $jobTitle = $jobList.Text
+        $employeeType = $employeeTypeList.SelectedItem
+
         #Find the Base Path
         if ($schoolList.SelectedItem -eq "GSEC") {
             $OUBasePath = "OU=Office Users,OU=GSEC,OU=GSSD Network,DC=GSSD,DC=ADS"
+        }
+        elseif ($schoolList.SelectedItem -like "*Garage*") {
+            $OUBasePath = "OU=Transportation,OU=Users,OU=Board Office,OU=GSSD Network,DC=GSSD,DC=ADS"
+            $OUBasePath = "OU=" + $schoolList.SelectedItem + "," + $OUBasePath
+            $OUBasePath = "OU=" + $WhereInSchoolList.SelectedItem + "," + $OUBasePath  
+            $dept = "Transportation"
+            $desc = $schoolList.SelectedItem  
         }
         else {
             $OUBasePath = "OU=Schools,OU=GSSD Network,DC=GSSD,DC=ADS"
@@ -425,15 +437,10 @@ function AddNotCasual {
             $OUBasePath = "OU=" + $WhereInSchoolList.SelectedItem + "," + $OUBasePath
         }
 
-        $dept = $schoolList.SelectedItem
-        $desc = $dept + " " + $WhereInSchoolList.SelectedItem
-        $jobTitle = $jobList.Text
-        $employeeType = $employeeTypeList.SelectedItem
-
         if ($fName -eq '' -or $lName -eq '' -or $empNumber -eq '' -or $null -eq $OUBasePath -or $jobTitle -eq '' -or $null -eq $dept -or $employeeType -eq '') {
             $ButtonType = [System.Windows.Forms.MessageBoxButtons]::OK
             $MessageIcon = [System.Windows.Forms.MessageBoxIcon]::Information
-            $MessageBody = "Please fill out the form before pressing done"
+            $MessageBody = "Please fill out the form before pressing done."
             $MessageTitle = "Error"
             [System.Windows.Forms.MessageBox]::Show($MessageBody, $MessageTitle, $ButtonType, $MessageIcon) | Out-Null
             $Form.Dispose()
@@ -736,6 +743,7 @@ function LeaveMenu {
 ############################################################################
 #DElETE FUNCTIONS START HERE
 function MoveToDeletes($queryName) {
+    $queryName = $queryName.Trim()
     $delDate = "2023 Deletes"
     $moveToOU = "OU=$delDate,OU=GSSD Network,DC=GSSD,DC=ADS"
     $del = "DEL"
@@ -818,10 +826,11 @@ function MoveToDeletesMenu {
     if ($result -eq [System.Windows.Forms.DialogResult]::Yes) {
         #Move to Deletes
         $queryName = $fTextBox.Text
+        $queryName = $queryName.Trim()
         #Test if user exists
         if ($queryName -eq "") {
             #Nothing entered
-            [System.Windows.MessageBox]::Show("Nothing entered. dumb") | Out-Null
+            [System.Windows.MessageBox]::Show("Nothing entered.") | Out-Null
             MoveToDeletesMenu
             exit
         }
@@ -829,7 +838,7 @@ function MoveToDeletesMenu {
             #No user in AD
             $queryName = $queryName.replace(' ', '.')
             if ((Get-ADUser -Filter "Name -eq '$queryName'").Count -eq 0) {
-                [System.Windows.MessageBox]::Show("No User with that name. dumb") | Out-Null
+                [System.Windows.MessageBox]::Show("No User with that name.") | Out-Null
                 MoveToDeletesMenu
                 exit
             }
@@ -848,6 +857,7 @@ function MoveToDeletesMenu {
 #RESET PASSWORD FUNCTIONS START HERE
 
 function ResetToDefaultPass($queryName) {
+    $queryName = $queryName.Trim()
     #change password
     Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object { Set-ADAccountPassword $_ -Reset -NewPassword (ConvertTo-SecureString -AsPlainText $Global:defaultPass -Force) }
     #unlock account
@@ -859,6 +869,7 @@ function ResetToDefaultPass($queryName) {
 }
 
 function ResetCustomPass($queryName) {
+    $queryName = $queryName.Trim()
     #Create Form
     $form = New-Object System.Windows.Forms.Form
     $form.Text = 'Set Custom Password'
@@ -1028,10 +1039,11 @@ function ResetPasswordMenu {
     if ($result -eq [System.Windows.Forms.DialogResult]::Yes) {
         #Set default password
         $queryName = $fTextBox.Text
+        $queryName = $queryName.Trim()
         #Test if user exists
         if ($queryName -eq "") {
             #Nothing entered
-            [System.Windows.MessageBox]::Show("Nothing entered. dumb") | Out-Null
+            [System.Windows.MessageBox]::Show("Nothing entered.") | Out-Null
             ResetPasswordMenu
             exit
         }
@@ -1039,7 +1051,7 @@ function ResetPasswordMenu {
             #No user in AD
             $queryName = $queryName.replace(' ', '.')
             if ((Get-ADUser -Filter "Name -eq '$queryName'").Count -eq 0) {
-                [System.Windows.MessageBox]::Show("No User with that name. dumb") | Out-Null
+                [System.Windows.MessageBox]::Show("No User with that name.") | Out-Null
                 ResetPasswordMenu
                 exit
             }
@@ -1054,7 +1066,7 @@ function ResetPasswordMenu {
         #Test if user exists
         if ($queryName -eq "") {
             #Nothing entered
-            [System.Windows.MessageBox]::Show("Nothing entered. dumb") | Out-Null
+            [System.Windows.MessageBox]::Show("Nothing entered.") | Out-Null
             ResetPasswordMenu
             exit
         }
@@ -1062,7 +1074,7 @@ function ResetPasswordMenu {
             #No user in AD
             $queryName = $queryName.replace(' ', '.')
             if ((Get-ADUser -Filter "Name -eq '$queryName'").Count -eq 0) {
-                [System.Windows.MessageBox]::Show("No User with that name. dumb") | Out-Null
+                [System.Windows.MessageBox]::Show("No User with that name.") | Out-Null
                 ResetPasswordMenu
                 exit
             }
@@ -1080,6 +1092,7 @@ function ResetPasswordMenu {
 ############################################################################
 #MOVE USER FUNCTIONS START HERE
 function MoveTo($queryName, $department, $OUPath, $path) {
+    $queryName = $queryName.Trim()
     # Create variables for replacing current ADUser Properties
     $description = "$department $OUPath"
     if ($path -like "*Transportation*") {
@@ -1269,6 +1282,8 @@ function MoveTo($queryName, $department, $OUPath, $path) {
 }
 
 function MoveUser($queryName) {
+    $queryName = $queryName.Trim()
+
     #Create Form
     $form = New-Object System.Windows.Forms.Form
     $form.Text = 'Move User'
@@ -1643,10 +1658,12 @@ function MoveUserMenu {
     if ($result -eq [System.Windows.Forms.DialogResult]::Yes) {
         #Set default password
         $queryName = $fTextBox.Text
+        $queryName = $queryName.Trim()
+
         #Test if user exists
         if ($queryName -eq "") {
             #Nothing entered
-            [System.Windows.MessageBox]::Show("Nothing entered. dumb") | Out-Null
+            [System.Windows.MessageBox]::Show("Nothing entered.") | Out-Null
             MoveUserMenu
             exit
         }
@@ -1654,7 +1671,7 @@ function MoveUserMenu {
             #No user in AD
             $queryName = $queryName.replace(' ', '.')
             if ((Get-ADUser -Filter "Name -eq '$queryName'").Count -eq 0) {
-                [System.Windows.MessageBox]::Show("No User with that name. dumb") | Out-Null
+                [System.Windows.MessageBox]::Show("No User with that name.") | Out-Null
                 MoveUserMenu
                 exit
             }
@@ -1726,10 +1743,6 @@ function MainMenu {
             if ($numberOfUsers -ne 0) {
                 $ShowNames.Items.AddRange("Loading $numberOfUsers User(s)...")
                 $userName = $findTextBox.Text
-
-                # $asyncResult = Start-Job -ScriptBlock $getListOfUsers -ArgumentList @($findTextBox.Text)
-                # $ShowNames.Text = $asyncResult | Receive-Job -Wait
-
                 $users = Get-ADUser -Filter "Name -like '*$userName*'" -Property *  | Sort-Object Name | Select-Object -ExpandProperty Name                
                 $ShowNames.Items.Clear()
                 $ShowNames.Items.AddRange($users)
@@ -1757,11 +1770,11 @@ function MainMenu {
     $ShowNames.Location = New-Object System.Drawing.Size(305, 20) 
     $disabledItem1 = "No Users Found."
     $ShowNames.Add_SelectedIndexChanged({
-        $selectedItem = $ShowNames.SelectedItem
-        if ($selectedItem -ne $disabledItem1) {
-            $findTextBox.Text = $selectedItem
-        }
-    })
+            $selectedItem = $ShowNames.SelectedItem
+            if ($selectedItem -ne $disabledItem1) {
+                $findTextBox.Text = $selectedItem
+            }
+        })
     $form.Controls.Add($ShowNames)
 
 
@@ -1854,7 +1867,6 @@ $Global:company = "GSSD"
 
 $arrOfDepartments = Get-ADOrganizationalUnit -Filter * -SearchBase "OU=Schools,OU=GSSD Network,DC=GSSD,DC=ADS" -SearchScope OneLevel | Select-Object Name
 $Global:allDept = $arrOfDepartments.Name
-
 
 $arrOfDepartmentsInGsec = Get-ADOrganizationalUnit -Filter * -SearchBase "OU=GSEC,OU=GSSD Network,DC=GSSD,DC=ADS" -SearchScope OneLevel | Select-Object Name
 $Global:allDeptInGsec = $arrOfDepartmentsInGsec.Name
