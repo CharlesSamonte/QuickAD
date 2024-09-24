@@ -1,4 +1,4 @@
-﻿######################################################################
+######################################################################
 # Author: Charles Samonte
 # Something to help me with AD
 # This version: Be able to move Students to different schools
@@ -62,24 +62,71 @@ function GetUserWithName($queryName) {
     }
     $accountStatus = $UserQuery | Select-Object -expand enabled
     #Display user information
-    [System.Windows.MessageBox]::Show(
-        "Name: " + $fName + " " + $lName + "`n" +
-        "Logon Name: " + $logonName + "`n" +
-        "Email: " + $email + "`n`n" +
+    # [System.Windows.MessageBox]::Show(
+    #     "Name: " + $fName + " " + $lName + "`n" +
+    #     "Logon Name: " + $logonName + "`n" +
+    #     "Email: " + $email + "`n`n" +
 	
-        "Job Title: " + $jobTitle + "`n" + 
-        "Employee No: " + $employeeNo + "`n" +
-        "Employee Level: " + $employeeType + "`n`n" +
+    #     "Job Title: " + $jobTitle + "`n" + 
+    #     "Employee No: " + $employeeNo + "`n" +
+    #     "Employee Level: " + $employeeType + "`n`n" +
 	
-        "Description: " + $desc + "`n" +
-        "Company: " + $comp + "`n" +
-        "Department: " + $dept + "`n`n" +
+    #     "Description: " + $desc + "`n" +
+    #     "Company: " + $comp + "`n" +
+    #     "Department: " + $dept + "`n`n" +
 	
-        "Location: " + $loc + "`n" +
-        "Last Logon Date: " + $lastLogonDate + "`n" +
-        "Enabled: " + $accountStatus
+    #     "Location: " + $loc + "`n" +
+    #     "Last Logon Date: " + $lastLogonDate + "`n" +
+    #     "Enabled: " + $accountStatus
 	
-        , "User Information") | Out-Null #Box Title
+    #     , "User Information") | Out-Null #Box Title
+    $form = New-Object System.Windows.Forms.Form
+    $form.Text = "User Information"
+    $form.Size = New-Object System.Drawing.Size(600, 400)
+    $form.StartPosition = [System.Windows.Forms.FormStartPosition]::CenterScreen
+    
+    $dataGridView = New-Object System.Windows.Forms.DataGridView
+    $dataGridView.Dock = [System.Windows.Forms.DockStyle]::Top
+    $dataGridView.Height = 310
+    $dataGridView.AutoSizeColumnsMode = [System.Windows.Forms.DataGridViewAutoSizeColumnsMode]::Fill
+    $dataGridView.RowHeadersVisible = $false  # Hide the row headers
+
+    # Create columns
+    $propertyColumn = $dataGridView.Columns.Add("Property", "Property")
+    $dataGridView.Columns.Add("Value", "Value")
+
+    # Set the width of the first column
+    $dataGridView.Columns[$propertyColumn].Width = 5
+
+    # Add rows
+    $dataGridView.Rows.Add("Name", "$fName $lName")
+    $dataGridView.Rows.Add("Logon Name", $logonName)
+    $dataGridView.Rows.Add("Email", $email)
+    $dataGridView.Rows.Add("Job Title", $jobTitle)
+    $dataGridView.Rows.Add("Employee No", $employeeNo)
+    $dataGridView.Rows.Add("Employee Level", $employeeType)
+    $dataGridView.Rows.Add("Description", $desc)
+    $dataGridView.Rows.Add("Company", $comp)
+    $dataGridView.Rows.Add("Department", $dept)
+    $dataGridView.Rows.Add("Location", $loc)
+    $dataGridView.Rows.Add("Last Logon Date", $lastLogonDate)
+    $dataGridView.Rows.Add("Enabled", $accountStatus)
+
+    # Create a smaller button
+    $button = New-Object System.Windows.Forms.Button
+    $button.Text = "Show All"
+    $button.Size = New-Object System.Drawing.Size(100, 30)
+    $button.Location = New-Object System.Drawing.Point(250, 315)
+
+    # Add an event handler for the button click event
+    $button.Add_Click({
+            GetAllUserInfoWithName($queryName)
+        })
+
+    $form.Controls.Add($dataGridView)
+    $form.Controls.Add($button)
+    $form.ShowDialog()
+    $form.TopMost = $true
 }
 
 function GetUserCount($query) {
@@ -87,12 +134,88 @@ function GetUserCount($query) {
     return $queryResult
 }
 
+function ConvertTo-String {
+    param (
+        [Parameter(Mandatory = $true)]
+        $Value
+    )
+    if ($Value -eq $null) {
+        return ""
+    }
+    elseif ($Value -is [System.Collections.IEnumerable] -and -not ($Value -is [string])) {
+        return ($Value -join ", ")
+    }
+    else {
+        return $Value.ToString()
+    }
+}
+
+function GetAllUserInfoWithName($queryName) {
+    $queryName = $queryName.Trim()
+    if ($queryName -eq "") {
+        #Nothing entered
+        [System.Windows.MessageBox]::Show("Nothing entered.") | Out-Null
+        return $null
+    }
+    elseif ((Get-ADUser -Filter "Name -eq '$queryName'").Count -eq 0) {
+        #No user in AD
+        $queryName = $queryName.replace(' ', '.')
+        if ((Get-ADUser -Filter "Name -eq '$queryName'").Count -eq 0) {
+            [System.Windows.MessageBox]::Show("No User Found.") | Out-Null
+            return $null
+        }
+    }
+
+    # Get the AD user information
+    $users = Get-ADUser -Filter "Name -eq '$queryName'" -Property *
+
+    # Create a new form
+    $form = New-Object System.Windows.Forms.Form
+    $form.Text = "AD User Information"
+    $form.Size = New-Object System.Drawing.Size(500, 600)
+    $form.StartPosition = [System.Windows.Forms.FormStartPosition]::CenterScreen
+
+    # Create a DataGridView
+    $dataGridView = New-Object System.Windows.Forms.DataGridView
+    $dataGridView.Dock = "Fill"
+    $dataGridView.ReadOnly = $true
+    $dataGridView.AllowUserToAddRows = $false
+    $dataGridView.AllowUserToDeleteRows = $false
+    $dataGridView.AutoSizeColumnsMode = "AllCells"
+    $dataGridView.RowHeadersVisible = $false  # Hide the row headers
+
+    # Create columns
+    $dataGridView.Columns.Add("Property", "Property")
+    $dataGridView.Columns.Add("Value", "Value")
+
+    # Loop through each user and add their information to the DataGridView
+    foreach ($user in $users) {
+        foreach ($property in $user.PSObject.Properties) {
+            if ($null -ne $property.Value) {
+                $propertyValue = ConvertTo-String -Value $property.Value
+            }
+            else {
+                $propertyValue = " "
+            }
+            $dataGridView.Rows.Add($property.Name, $propertyValue) | Out-Null
+        }
+        # Add a blank row to separate users
+        $dataGridView.Rows.Add("", "") | Out-Null
+    }
+
+    # Add the DataGridView to the form
+    $form.Controls.Add($dataGridView)
+
+    # Show the form
+    $form.ShowDialog()
+    $form.TopMost = $true
+}
 ############################################################################
 #ADDING NEW USER FUNCTIONS START HERE
 function AddCasual {
     #Create Form
     $SCForm = New-Object system.Windows.Forms.Form
-    $SCForm.ClientSize = ‘300,220’
+    $SCForm.ClientSize = '300,220'
     $SCForm.text = “Create a New User”
     $SCForm.BackColor = “#ffffff”       
     $SCForm.StartPosition = 'CenterScreen'
@@ -148,7 +271,7 @@ function AddCasual {
     $jobList.location = New-Object System.Drawing.Point(100, 100)
     $jobList.SelectedIndex = -1
     # Add the items in the dropdown list
-    @(‘Substitute Staff’, ’Substitute Teacher') | ForEach-Object { [void] $jobList.Items.Add($_) }
+    @('Substitute Staff', 'Substitute Teacher') | ForEach-Object { [void] $jobList.Items.Add($_) }
     $SCForm.Controls.Add($jobList)
 
     #Job Title Label
@@ -253,9 +376,9 @@ function AddCasual {
 function AddNotCasual {
     #Create Form
     $Form = New-Object system.Windows.Forms.Form
-    $Form.ClientSize = ‘300,280’
-    $Form.text = “Create a New User”
-    $Form.BackColor = “#ffffff”
+    $Form.ClientSize = '300,280'
+    $Form.text = 'Create a New User'
+    $Form.BackColor = '#ffffff'
     $Form.StartPosition = 'CenterScreen'
     $Form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedSingle
 
@@ -308,7 +431,7 @@ function AddNotCasual {
     $jobList.Size = New-Object System.Drawing.Size(120, 20)
     $jobList.location = New-Object System.Drawing.Point(100, 100)
     # Add the items in the dropdown list
-    @(‘Teacher’, 'Admin Assistant’, ’Ed. Assistant', 'Caretaker', 'Bus Driver') | ForEach-Object { [void] $jobList.Items.Add($_) }
+    @('Teacher', 'Admin Assistant', 'Ed. Assistant', 'Caretaker', 'Bus Driver') | ForEach-Object { [void] $jobList.Items.Add($_) }
     $jobList.SelectedIndex = -1
     $Form.Controls.Add($jobList)
 
@@ -482,9 +605,9 @@ function AddNotCasual {
 function AddUser {
     # Create a new form
     $Form1 = New-Object system.Windows.Forms.Form
-    $Form1.ClientSize = ‘250,150’
-    $Form1.text = “Create a New User”
-    $Form1.BackColor = “#ffffff”
+    $Form1.ClientSize = '250,150'
+    $Form1.text = 'Create a New User'
+    $Form1.BackColor = '#ffffff'
     $Form1.StartPosition = 'CenterScreen'
     $Form1.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedSingle
 
@@ -863,7 +986,7 @@ function ResetToDefaultPass($queryName) {
     #unlock account
     Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object { Unlock-ADAccount $_ }
     #User must change password at next login
-    Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object { Set-ADUser $_ -ChangePasswordAtLogon $true }
+    Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object { Set-ADUser $_ -ChangePasswordAtLogon $Global:defaultPas }
     [System.Windows.MessageBox]::Show("User's Password has been reset to Default!") | Out-Null
     MainMenu
 }
@@ -1834,11 +1957,12 @@ function MainMenu {
     $justButton.Size = New-Object System.Drawing.Size(75, 50)
     $justButton.Text = 'Secret'
     $justButton.Add_Click{
-        [System.Diagnostics.Process]::Start("chrome", "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+        #[System.Diagnostics.Process]::Start("chrome", "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+        GetAllUserInfoWithName("Charles Samonte")
     }
     $form.Controls.Add($justButton)
 
-    $form.Topmost = $true
+
     $result = $form.ShowDialog()
 
     if ($result -eq [System.Windows.Forms.DialogResult]::OK) {
