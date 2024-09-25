@@ -1,7 +1,6 @@
 ######################################################################
 # Author: Charles Samonte
 # Something to help me with AD
-# This version: Be able to move Students to different schools
 ######################################################################
 
 Add-Type -AssemblyName PresentationCore, PresentationFramework
@@ -1957,8 +1956,7 @@ function MainMenu {
     $justButton.Size = New-Object System.Drawing.Size(75, 50)
     $justButton.Text = 'Secret'
     $justButton.Add_Click{
-        #[System.Diagnostics.Process]::Start("chrome", "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
-        GetAllUserInfoWithName("Charles Samonte")
+        [System.Diagnostics.Process]::Start("chrome", "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
     }
     $form.Controls.Add($justButton)
 
