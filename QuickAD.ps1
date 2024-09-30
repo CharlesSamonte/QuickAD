@@ -215,8 +215,8 @@ function AddCasual {
     #Create Form
     $SCForm = New-Object system.Windows.Forms.Form
     $SCForm.ClientSize = '300,220'
-    $SCForm.text = “Create a New User”
-    $SCForm.BackColor = “#ffffff”       
+    $SCForm.text = "Create a New User"
+    $SCForm.BackColor = "#ffffff"
     $SCForm.StartPosition = 'CenterScreen'
     $SCForm.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedSingle
 
@@ -265,7 +265,7 @@ function AddCasual {
     #Add Dropdown list
     $jobList = New-Object system.Windows.Forms.ComboBox
     $jobList.DropDownStyle = [system.Windows.Forms.ComboBoxStyle]::DropDownList
-    $jobList.text = “”
+    $jobList.text = " "
     $jobList.Size = New-Object System.Drawing.Size(120, 20)
     $jobList.location = New-Object System.Drawing.Point(100, 100)
     $jobList.SelectedIndex = -1
@@ -282,7 +282,7 @@ function AddCasual {
     #Add Dropdown list
     $OUList = New-Object system.Windows.Forms.ComboBox
     $OUList.DropDownStyle = [system.Windows.Forms.ComboBoxStyle]::DropDownList
-    $OUList.text = “”
+    $OUList.text = " "
     $OUList.location = New-Object System.Drawing.Point(100, 130)
     $OUList.Size = New-Object System.Drawing.Size(120, 20)
     $OUList.SelectedIndex = -1
@@ -318,13 +318,15 @@ function AddCasual {
         $loginName = ($fName + "." + $lName).ToLower()
 
         $empNumber = ($empNoTextbox.Text).Trim()
-        $jobPostfix = $jobList.SelectedItem.ToString() -replace "Substitute ", ""
 
+        $jobPostfix = $jobList.SelectedItem.ToString() -replace "Substitute ", ""
+        $jobTitle = $jobList.SelectedItem.ToString()
+        
         $OUPath = "OU=" + $OUList.SelectedItem + ",OU=SUB,OU=Schools,OU=GSSD Network,DC=GSSD,DC=ADS"
         $displayEmail = $fName + "." + $lName + "@gssd.ca"
         $loginEmail = $loginName + "@gssd.ca"
         $desc = "SUB " + $jobPostfix
-        $jobTitle = $jobList.SelectedItem.ToString()
+
         $dept = "SUB"
         $employeeType = "1"
 
@@ -426,7 +428,7 @@ function AddNotCasual {
     #Add Dropdown list
     $jobList = New-Object system.Windows.Forms.ComboBox
     $jobList.DropDownStyle = [system.Windows.Forms.ComboBoxStyle]::DropDown
-    $jobList.text = “”
+    $jobList.text = ""
     $jobList.Size = New-Object System.Drawing.Size(120, 20)
     $jobList.location = New-Object System.Drawing.Point(100, 100)
     # Add the items in the dropdown list
@@ -443,7 +445,7 @@ function AddNotCasual {
     #Add Dropdown list
     $schoolList = New-Object system.Windows.Forms.ComboBox
     $schoolList.DropDownStyle = [system.Windows.Forms.ComboBoxStyle]::DropDownList
-    $schoolList.text = “”
+    $schoolList.text = ""
     $schoolList.Size = New-Object System.Drawing.Size(120, 20)
     $schoolList.location = New-Object System.Drawing.Point(100, 130)
     # Add the items in the dropdown list
@@ -480,7 +482,7 @@ function AddNotCasual {
     #Add Dropdown list
     $WhereInSchoolList = New-Object system.Windows.Forms.ComboBox
     $WhereInSchoolList.DropDownStyle = [system.Windows.Forms.ComboBoxStyle]::DropDownList
-    $WhereInSchoolList.text = “”
+    $WhereInSchoolList.text = " " 
     $WhereInSchoolList.Size = New-Object System.Drawing.Size(120, 20)
     $WhereInSchoolList.location = New-Object System.Drawing.Point(100, 160)
     # Add the items in the dropdown list
@@ -497,7 +499,7 @@ function AddNotCasual {
     #Add Dropdown list
     $employeeTypeList = New-Object system.Windows.Forms.ComboBox
     $employeeTypeList.DropDownStyle = [system.Windows.Forms.ComboBoxStyle]::DropDownList
-    $employeeTypeList.text = “”
+    $employeeTypeList.text = " " 
     $employeeTypeList.location = New-Object System.Drawing.Point(100, 190)
     $employeeTypeList.Size = New-Object System.Drawing.Size(120, 20)
     $employeeTypeList.SelectedIndex = -1
@@ -1903,7 +1905,7 @@ function MainMenu {
     #Horizontal line
     $lineLabel = New-Object System.Windows.Forms.Label
     $lineLabel.Location = New-Object System.Drawing.Point(0, 110)
-    $lineLabel.Text = ''
+    $lineLabel.Text = " "
     $lineLabel.BorderStyle = [System.Windows.Forms.BorderStyle]::Fixed3D;
     $lineLabel.AutoSize = $false
     $lineLabel.Height = 2
