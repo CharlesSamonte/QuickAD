@@ -60,25 +60,7 @@ function GetUserWithName($queryName) {
         $lastLogonDate = "N/A"
     }
     $accountStatus = $UserQuery | Select-Object -expand enabled
-    #Display user information
-    # [System.Windows.MessageBox]::Show(
-    #     "Name: " + $fName + " " + $lName + "`n" +
-    #     "Logon Name: " + $logonName + "`n" +
-    #     "Email: " + $email + "`n`n" +
-	
-    #     "Job Title: " + $jobTitle + "`n" + 
-    #     "Employee No: " + $employeeNo + "`n" +
-    #     "Employee Level: " + $employeeType + "`n`n" +
-	
-    #     "Description: " + $desc + "`n" +
-    #     "Company: " + $comp + "`n" +
-    #     "Department: " + $dept + "`n`n" +
-	
-    #     "Location: " + $loc + "`n" +
-    #     "Last Logon Date: " + $lastLogonDate + "`n" +
-    #     "Enabled: " + $accountStatus
-	
-    #     , "User Information") | Out-Null #Box Title
+
     $form = New-Object System.Windows.Forms.Form
     $form.Text = "User Information"
     $form.Size = New-Object System.Drawing.Size(600, 400)
@@ -747,11 +729,11 @@ function RemoveOnLeave($queryName) {
      
 }
 
-function LeaveMenu {
+function LeaveMenu($queryName) {
     #Create the form
     $form = New-Object System.Windows.Forms.Form
     $form.Text = 'Mark On Leave'
-    $form.Size = New-Object System.Drawing.Size(300, 180)
+    $form.Size = New-Object System.Drawing.Size(300, 220)
     $form.StartPosition = 'CenterScreen'
     $form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedSingle
 
@@ -764,40 +746,40 @@ function LeaveMenu {
     $fTextBox = New-Object System.Windows.Forms.TextBox
     $fTextBox.Location = New-Object System.Drawing.Point(40, 40)
     $fTextBox.Size = New-Object System.Drawing.Size(200, 20)
-    $fTextBox.Add_TextChanged{
-        if ($fTextBox.Text -eq "") {
-            $form.Controls.Add($backButton)
-            $form.Controls.Remove($markButton)
-            $form.Controls.Remove($removeButton)
-        }
-        else {
-            $form.Controls.Remove($backButton)
-            $form.Controls.Add($markButton)
-            $form.Controls.Add($removeButton)
-        }
-    }
+    $fTextBox.Text = $queryName
     $form.Controls.Add($fTextBox)
-
-    #Button
-    $backButton = New-Object System.Windows.Forms.Button
-    $backButton.Location = New-Object System.Drawing.Point(90, 70)
-    $backButton.Size = New-Object System.Drawing.Size(100, 35)
-    $backButton.Text = 'Back'
-    $backButton.DialogResult = [System.Windows.Forms.DialogResult]::OK
-    $form.Controls.Add($backButton)
 
     $markButton = New-Object System.Windows.Forms.Button
     $markButton.Location = New-Object System.Drawing.Point(35, 70)
     $markButton.Size = New-Object System.Drawing.Size(100, 35)
     $markButton.Text = "Mark`nOn Leave"    
     $markButton.DialogResult = [System.Windows.Forms.DialogResult]::Yes
+    $form.Controls.Add($markButton)
 
     $removeButton = New-Object System.Windows.Forms.Button
     $removeButton.Location = New-Object System.Drawing.Point(145, 70)
     $removeButton.Size = New-Object System.Drawing.Size(100, 35)
     $removeButton.Text = "Remove`nOn Leave"
     $removeButton.DialogResult = [System.Windows.Forms.DialogResult]::No
+    $form.Controls.Add($removeButton)
 
+    #Horizontal line
+    $lineLabel = New-Object System.Windows.Forms.Label
+    $lineLabel.Location = New-Object System.Drawing.Point(0, 120)
+    $lineLabel.Text = " "
+    $lineLabel.BorderStyle = [System.Windows.Forms.BorderStyle]::Fixed3D;
+    $lineLabel.AutoSize = $false
+    $lineLabel.Height = 2
+    $lineLabel.Width = 300
+    $form.Controls.Add($lineLabel)
+
+    #Button
+    $backButton = New-Object System.Windows.Forms.Button
+    $backButton.Location = New-Object System.Drawing.Point(90, 135)
+    $backButton.Size = New-Object System.Drawing.Size(100, 35)
+    $backButton.Text = 'Cancel'
+    $backButton.DialogResult = [System.Windows.Forms.DialogResult]::OK
+    $form.Controls.Add($backButton)
 
     $result = $form.ShowDialog()
     if ($result -eq [System.Windows.Forms.DialogResult]::Yes) {
@@ -887,6 +869,7 @@ function MoveToDeletes($queryName) {
     Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object { Set-ADUser $_ -Company ($null) }
     Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object { Set-ADUser $_ -Title ($null) }
     Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object { Set-ADUser $_ -Clear "extensionattribute3" }
+    Get-ADUser -Filter "Name -like '$queryName'" | Set-ADUser -Add @{msExchHideFromAddressLists="TRUE"}
     Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object { Disable-ADAccount $_ } 
     Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object { Move-ADObject $_ -TargetPath "$moveToOu" } 
 
@@ -903,7 +886,7 @@ function MoveToDeletes($queryName) {
     MainMenu
 }
 
-function MoveToDeletesMenu {
+function MoveToDeletesMenu($queryName) {
     #Create the form
     $form = New-Object System.Windows.Forms.Form
     $form.Text = 'Move to 2023 Deletes'
@@ -920,31 +903,23 @@ function MoveToDeletesMenu {
     $fTextBox = New-Object System.Windows.Forms.TextBox
     $fTextBox.Location = New-Object System.Drawing.Point(40, 40)
     $fTextBox.Size = New-Object System.Drawing.Size(200, 20)
-    $fTextBox.Add_TextChanged{
-        if ($fTextBox.Text -eq "") {
-            $form.Controls.Add($backButton)
-            $form.Controls.Remove($delButton)
-        }
-        else {
-            $form.Controls.Remove($backButton)
-            $form.Controls.Add($delButton)
-        }
-    }
+    $fTextBox.Text = $queryName
     $form.Controls.Add($fTextBox)
 
     #Button
     $backButton = New-Object System.Windows.Forms.Button
-    $backButton.Location = New-Object System.Drawing.Point(90, 70)
+    $backButton.Location = New-Object System.Drawing.Point(35, 70)
     $backButton.Size = New-Object System.Drawing.Size(100, 35)
     $backButton.Text = 'Back'
     $backButton.DialogResult = [System.Windows.Forms.DialogResult]::Abort
     $form.Controls.Add($backButton)
 
     $delButton = New-Object System.Windows.Forms.Button
-    $delButton.Location = New-Object System.Drawing.Point(90, 70)
+    $delButton.Location = New-Object System.Drawing.Point(145, 70)
     $delButton.Size = New-Object System.Drawing.Size(100, 35)
     $delButton.Text = "Move to Deletes"    
     $delButton.DialogResult = [System.Windows.Forms.DialogResult]::Yes
+    $form.Controls.Add($delButton)
 
     $result = $form.ShowDialog()
     if ($result -eq [System.Windows.Forms.DialogResult]::Yes) {
@@ -987,7 +962,7 @@ function ResetToDefaultPass($queryName) {
     #unlock account
     Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object { Unlock-ADAccount $_ }
     #User must change password at next login
-    Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object { Set-ADUser $_ -ChangePasswordAtLogon $Global:defaultPas }
+    Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object { Set-ADUser $_ -ChangePasswordAtLogon $true }
     [System.Windows.MessageBox]::Show("User's Password has been reset to Default!") | Out-Null
     MainMenu
 }
@@ -1107,7 +1082,8 @@ function ResetCustomPass($queryName) {
     }
     exit
 }
-function ResetPasswordMenu {
+
+function ResetPasswordMenu($queryName) {
     #Create the form
     $form = New-Object System.Windows.Forms.Form
     $form.Text = 'Reset Password'
@@ -1124,40 +1100,41 @@ function ResetPasswordMenu {
     $fTextBox = New-Object System.Windows.Forms.TextBox
     $fTextBox.Location = New-Object System.Drawing.Point(40, 40)
     $fTextBox.Size = New-Object System.Drawing.Size(200, 20)
-    $fTextBox.Add_TextChanged{
-        if ($fTextBox.Text -eq "") {
-            $form.Controls.Remove($defaultPassButton)
-            $form.Controls.Remove($customPassButton)
-            $backButton.Location = New-Object System.Drawing.Point(90, 70)
-
-        }
-        else {
-            $form.Controls.Add($defaultPassButton)
-            $form.Controls.Add($customPassButton)
-            $backButton.Location = New-Object System.Drawing.Point(90, 110)
-        }
-    }
+    $fTextBox.Text = $queryName
     $form.Controls.Add($fTextBox)
-
-    #Button
-    $backButton = New-Object System.Windows.Forms.Button
-    $backButton.Location = New-Object System.Drawing.Point(90, 70)
-    $backButton.Size = New-Object System.Drawing.Size(100, 35)
-    $backButton.Text = 'Back'
-    $backButton.DialogResult = [System.Windows.Forms.DialogResult]::Abort
-    $form.Controls.Add($backButton)
 
     $defaultPassButton = New-Object System.Windows.Forms.Button
     $defaultPassButton.Location = New-Object System.Drawing.Point(35, 70)
     $defaultPassButton.Size = New-Object System.Drawing.Size(100, 35)
     $defaultPassButton.Text = "Staff `nDefault"    
     $defaultPassButton.DialogResult = [System.Windows.Forms.DialogResult]::Yes
+    $form.Controls.Add($defaultPassButton)
 
     $customPassButton = New-Object System.Windows.Forms.Button
     $customPassButton.Location = New-Object System.Drawing.Point(145, 70)
     $customPassButton.Size = New-Object System.Drawing.Size(100, 35)
     $customPassButton.Text = "Custom"
     $customPassButton.DialogResult = [System.Windows.Forms.DialogResult]::No
+    $form.Controls.Add($customPassButton)
+
+    #Horizontal line
+    $lineLabel = New-Object System.Windows.Forms.Label
+    $lineLabel.Location = New-Object System.Drawing.Point(0, 110)
+    $lineLabel.Text = " "
+    $lineLabel.BorderStyle = [System.Windows.Forms.BorderStyle]::Fixed3D;
+    $lineLabel.AutoSize = $false
+    $lineLabel.Height = 2
+    $lineLabel.Width = 300
+    $form.Controls.Add($lineLabel)
+
+    #Button
+    $backButton = New-Object System.Windows.Forms.Button
+    $backButton.Location = New-Object System.Drawing.Point(90, 115)
+    $backButton.Size = New-Object System.Drawing.Size(100, 35)
+    $backButton.Text = 'Back'
+    $backButton.DialogResult = [System.Windows.Forms.DialogResult]::Abort
+    $form.Controls.Add($backButton)
+
 
     $result = $form.ShowDialog()
     if ($result -eq [System.Windows.Forms.DialogResult]::Yes) {
@@ -1383,6 +1360,7 @@ function MoveTo($queryName, $department, $OUPath, $path) {
             Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object { Set-ADUser $_ -Company ($defaultComp) }
             Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object { Set-ADUser $_ -EmployeeNumber ($newEmployeeNumber) }
             Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object { Set-ADUser $_ -replace @{"extensionattribute3" = "$newEmployeeType" } }
+            Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object { Set-ADUser $_ -Clear msExchHideFromAddressLists }
             Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object { Unlock-ADAccount $_ }
             Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object { Enable-ADAccount $_ }
 
@@ -1735,7 +1713,7 @@ function MoveUser($queryName) {
     exit
 }
 
-function MoveUserMenu {
+function MoveUserMenu($queryName) {
     #Create the form
     $form = New-Object System.Windows.Forms.Form
     $form.Text = 'Move User'
@@ -1752,31 +1730,23 @@ function MoveUserMenu {
     $fTextBox = New-Object System.Windows.Forms.TextBox
     $fTextBox.Location = New-Object System.Drawing.Point(40, 40)
     $fTextBox.Size = New-Object System.Drawing.Size(200, 20)
-    $fTextBox.Add_TextChanged{
-        if ($fTextBox.Text -eq "") {
-            $form.Controls.Add($backButton)
-            $form.Controls.Remove($nextButton)
-        }
-        else {
-            $form.Controls.Remove($backButton)
-            $form.Controls.Add($nextButton)
-        }
-    }
+    $fTextBox.Text = $queryName
     $form.Controls.Add($fTextBox)
 
     #Button
     $backButton = New-Object System.Windows.Forms.Button
-    $backButton.Location = New-Object System.Drawing.Point(90, 70)
+    $backButton.Location = New-Object System.Drawing.Point(35, 70)
     $backButton.Size = New-Object System.Drawing.Size(100, 35)
     $backButton.Text = 'Back'
     $backButton.DialogResult = [System.Windows.Forms.DialogResult]::Abort
     $form.Controls.Add($backButton)
 
     $nextButton = New-Object System.Windows.Forms.Button
-    $nextButton.Location = New-Object System.Drawing.Point(90, 70)
+    $nextButton.Location = New-Object System.Drawing.Point(145, 70)
     $nextButton.Size = New-Object System.Drawing.Size(100, 35)
     $nextButton.Text = "Next"    
     $nextButton.DialogResult = [System.Windows.Forms.DialogResult]::Yes
+    $form.Controls.Add($nextButton)
 
     $result = $form.ShowDialog()
     if ($result -eq [System.Windows.Forms.DialogResult]::Yes) {
@@ -1969,16 +1939,16 @@ function MainMenu {
         AddUser
     }
     elseif ($result -eq [System.Windows.Forms.DialogResult]::YES) {
-        LeaveMenu
+        LeaveMenu($findTextBox.Text)
     }
     elseif ($result -eq [System.Windows.Forms.DialogResult]::NO) {
-        MoveToDeletesMenu
+        MoveToDeletesMenu($findTextBox.Text)
     }
     elseif ($result -eq [System.Windows.Forms.DialogResult]::RETRY) {
-        ResetPasswordMenu
+        ResetPasswordMenu($findTextBox.Text)
     }
     elseif ($result -eq [System.Windows.Forms.DialogResult]::IGNORE) {
-        MoveUserMenu
+        MoveUserMenu($findTextBox.Text)
     }
 }
 
