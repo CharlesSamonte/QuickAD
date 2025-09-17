@@ -1,4 +1,4 @@
-######################################################################
+﻿######################################################################
 # Author: Charles Samonte
 # Something to help me with AD account management
 ######################################################################
@@ -13,9 +13,8 @@ function userNameExist($queryName) {
     $queryName = $queryName.Trim()
     if ((Get-ADUser -Filter "Name -eq '$queryName'").Count -eq 0) {
         #No user in AD
-        $queryName = $queryName.replace(' ', '.')
+        $queryName = $queryName.Replace(' ', '.')
         if ((Get-ADUser -Filter "Name -eq '$queryName'").Count -eq 0) {
-            #[System.Windows.MessageBox]::Show("No User with that name.") | Out-Null
             return $false
         }
     }
@@ -23,6 +22,7 @@ function userNameExist($queryName) {
 }
 
 function GetUserCount($query) {
+    $query = $query.Trim();
     $queryResult = ([array](Get-ADUser -Filter "Name -like '*$query*'")).Count
     return $queryResult
 }
@@ -47,13 +47,10 @@ function ConvertTo-String {
 function GetUserWithName($queryName) {
     $queryName = $queryName.Trim()
     if ($queryName -eq "") {
-        #Nothing entered
-        [System.Windows.MessageBox]::Show("Nothing entered.") | Out-Null
         return $null
     }
     elseif (-not (userNameExist($queryName))) {
         #No user in AD
-        [System.Windows.MessageBox]::Show("No user with that name.") | Out-Null
         return $null
     }
 
@@ -66,6 +63,7 @@ function GetUserWithName($queryName) {
     $employeeNo = $UserQuery | Select-Object -expand EmployeeNumber
     $employeeType = $UserQuery | Select-Object -expand extensionAttribute3
     $birthdate = $UserQuery | Select-Object -expand extensionAttribute4
+    $grade = $UserQuery | Select-Object -expand extensionAttribute2
     $jobTitle = $UserQuery | Select-Object -expand Title
     $email = $UserQuery | Select-Object -expand UserPrincipalName
     $logonName = $UserQuery | Select-Object -expand sAMAccountName
@@ -102,13 +100,17 @@ function GetUserWithName($queryName) {
     # Add rows
     $dataGridView.Rows.Add("Name", "$fName $lName")
     $dataGridView.Rows.Add("Logon Name", $logonName)
-    $dataGridView.Rows.Add("Birth Date", $birthdate)
     $dataGridView.Rows.Add("Email", $email)
     $dataGridView.Rows.Add("Job Title", $jobTitle)
-    $dataGridView.Rows.Add("Employee No", $employeeNo)
-    $dataGridView.Rows.Add("Employee Level", $employeeType)
+    if ($jobTitle -like "*Student*") {
+        $dataGridView.Rows.Add("Grade", $grade)
+    }
+    else {
+        $dataGridView.Rows.Add("Birth Date", $birthdate)
+        $dataGridView.Rows.Add("Employee No", $employeeNo)
+        $dataGridView.Rows.Add("Employee Level", $employeeType)
+    }
     $dataGridView.Rows.Add("Description", $desc)
-    $dataGridView.Rows.Add("Company", $comp)
     $dataGridView.Rows.Add("Department", $dept)
     $dataGridView.Rows.Add("Location", $loc)
     $dataGridView.Rows.Add("Last Logon Date", $lastLogonDate)
@@ -194,207 +196,18 @@ function GetAllUserInfoWithName($queryName) {
 }
 ############################################################################
 #ADDING NEW USER FUNCTIONS START HERE
-function AddCasual {
-    #Spacing
-    $elementRow = 10;
-    $rowSpace = 30;
-
-    #Create Form
-    $SCForm = New-Object system.Windows.Forms.Form
-    $SCForm.ClientSize = '320,320'
-    $SCForm.text = "Create a New User"
-    $SCForm.StartPosition = 'CenterScreen'
-    $SCForm.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedSingle
-
-    #First Name Label
-    $fNameLabel = New-Object System.Windows.Forms.label
-    $fNameLabel.Location = New-Object System.Drawing.Size(7, $elementRow)
-    $fNameLabel.Size = New-Object System.Drawing.Size(80, 25)
-    $fNameLabel.Text = "First Name:"
-    $SCForm.Controls.Add($fNameLabel)
-    #First Name TextBox
-    $fNameTextbox = New-Object System.Windows.Forms.TextBox
-    $fNameTextbox.Location = New-Object System.Drawing.Size(100, $elementRow)
-    $fNameTextbox.Size = New-Object System.Drawing.Size(120, 20)
-    $SCForm.Controls.Add($fNameTextbox)
-
-    #Last Name Label
-    $elementRow += $rowSpace
-    $lNameLabel = New-Object System.Windows.Forms.label
-    $lNameLabel.Location = New-Object System.Drawing.Size(7, $elementRow)
-    $lNameLabel.Size = New-Object System.Drawing.Size(80, 25)
-    $lNameLabel.Text = "Last Name:"
-    $SCForm.Controls.Add($lNameLabel)
-    #Last Name TextBox
-    $lNameTextbox = New-Object System.Windows.Forms.TextBox
-    $lNameTextbox.Location = New-Object System.Drawing.Size(100, $elementRow)
-    $lNameTextbox.Size = New-Object System.Drawing.Size(120, 20)
-    $SCForm.Controls.Add($lNameTextbox)
-
-    #DOB Label
-    $elementRow += $rowSpace
-    $dobLabel = New-Object System.Windows.Forms.label
-    $dobLabel.Location = New-Object System.Drawing.Size(7, $elementRow)
-    $dobLabel.Size = New-Object System.Drawing.Size(80, 25)
-    $dobLabel.Text = "DOB:"
-    $SCForm.Controls.Add($dobLabel)
-    #DOB TextBox
-    $dobTextbox = New-Object System.Windows.Forms.DateTimePicker
-    $dobTextbox.Location = New-Object System.Drawing.Size(100, $elementRow)
-    $dobTextbox.Size = New-Object System.Drawing.Size(120, 20)
-    $dobTextbox.Format = [System.Windows.Forms.DateTimePickerFormat]::Short
-    $SCForm.Controls.Add($dobTextbox)
-    $dobHint = New-Object System.Windows.Forms.label
-    $dobHint.Location = New-Object System.Drawing.Size(230, $elementRow)
-    $dobHint.Size = New-Object System.Drawing.Size(80, 25)
-    $dobHint.Text = "(yyyy-mm-dd)"
-    $SCForm.Controls.Add($dobHint)
-
-    #Employee Number Label
-    $elementRow += $rowSpace
-    $empNoLabel = New-Object System.Windows.Forms.label
-    $empNoLabel.Location = New-Object System.Drawing.Size(7, $elementRow)
-    $empNoLabel.Size = New-Object System.Drawing.Size(80, 25)
-    $empNoLabel.Text = "Employee No.:"
-    $SCForm.Controls.Add($empNoLabel)
-    #Employee Number TextBox
-    $empNoTextbox = New-Object System.Windows.Forms.TextBox
-    $empNoTextbox.Location = New-Object System.Drawing.Size(100, $elementRow)
-    $empNoTextbox.Size = New-Object System.Drawing.Size(120, 20)
-    $SCForm.Controls.Add($empNoTextbox)
-
-    #Job Title Label
-    $elementRow += $rowSpace
-    $titleLabel = New-Object System.Windows.Forms.label
-    $titleLabel.Location = New-Object System.Drawing.Size(7, $elementRow)
-    $titleLabel.Size = New-Object System.Drawing.Size(80, 25)
-    $titleLabel.Text = "Job Title:"
-    $SCForm.Controls.Add($titleLabel)
-    #Add Dropdown list
-    $jobList = New-Object system.Windows.Forms.ComboBox
-    $jobList.DropDownStyle = [system.Windows.Forms.ComboBoxStyle]::DropDownList
-    $jobList.text = " "
-    $jobList.Size = New-Object System.Drawing.Size(120, 20)
-    $jobList.location = New-Object System.Drawing.Point(100, $elementRow)
-    $jobList.SelectedIndex = -1
-    # Add the items in the dropdown list
-    @('Substitute Staff', 'Substitute Teacher') | ForEach-Object { [void] $jobList.Items.Add($_) }
-    $SCForm.Controls.Add($jobList)
-
-    #Job Title Label
-    $elementRow += $rowSpace
-    $OULabel = New-Object System.Windows.Forms.label
-    $OULabel.Location = New-Object System.Drawing.Size(7, $elementRow)
-    $OULabel.Size = New-Object System.Drawing.Size(80, 25)
-    $OULabel.Text = "OU Path:"
-    $SCForm.Controls.Add($OULabel)
-    #Add Dropdown list
-    $OUList = New-Object system.Windows.Forms.ComboBox
-    $OUList.DropDownStyle = [system.Windows.Forms.ComboBoxStyle]::DropDownList
-    $OUList.text = " "
-    $OUList.location = New-Object System.Drawing.Point(100, $elementRow)
-    $OUList.Size = New-Object System.Drawing.Size(120, 20)
-    $OUList.SelectedIndex = -1
-    # Add the items in the dropdown list
-    $pathToOU = "OU=SUB" + ",OU=Schools,OU=GSSD Network,DC=GSSD,DC=ADS"
-    $OUinSchool = Get-ADOrganizationalUnit -Filter * -SearchBase "$pathToOU" -SearchScope OneLevel | Select-Object Name
-    $arrayOfOUInSchool = $OUinSchool.Name
-    $arrayOfOUInSchool | ForEach-Object { [void] $OUList.Items.Add($_) }
-    $SCForm.Controls.Add($OUList)
-   
-    #Add buttons
-    $elementRow += $rowSpace
-    $BackButton = New-Object System.Windows.Forms.Button
-    $BackButton.Location = New-Object System.Drawing.Point(20, $elementRow)
-    $BackButton.Size = New-Object System.Drawing.Size(120, 23)
-    $BackButton.Text = "Back"
-    $BackButton.DialogResult = [System.Windows.Forms.DialogResult]::Abort
-    $SCForm.Controls.Add($BackButton)
-
-    $DoneButton = New-Object System.Windows.Forms.Button
-    $DoneButton.Location = New-Object System.Drawing.Point(150, $elementRow)
-    $DoneButton.Size = New-Object System.Drawing.Size(120, 23)
-    $DoneButton.Text = "Done"
-    $DoneButton.DialogResult = [System.Windows.Forms.DialogResult]::OK
-    $SCForm.Controls.Add($DoneButton)
-   
-    $res = $SCForm.ShowDialog()
-
-    if ($res -eq [System.Windows.Forms.DialogResult]::OK) {
-        #Get variables
-        $fName = ($fNameTextbox.Text).Trim()
-        $lName = ($lNameTextbox.Text).Trim()
-        $dob = $dobTextbox.Value.ToString("yyyy-MM-dd")
-        $fullName = $fName + " " + $lName
-        $loginName = ($fName + "." + $lName).ToLower()
-
-        $empNumber = ($empNoTextbox.Text).Trim()
-
-        $jobPostfix = $jobList.SelectedItem.ToString() -replace "Substitute ", ""
-        $jobTitle = $jobList.SelectedItem.ToString()
-        
-        $OUPath = "OU=" + $OUList.SelectedItem + ",OU=SUB,OU=Schools,OU=GSSD Network,DC=GSSD,DC=ADS"
-        $displayEmail = $fName + "." + $lName + "@gssd.ca"
-        $loginEmail = $loginName + "@gssd.ca"
-        $googleEmail = $loginName + "@gssdschools.ca"
-        $desc = "SUB " + $jobPostfix
-
-        $dept = "SUB"
-        $employeeType = "1"
-        $defaultPass = (Get-Date $dob).ToString("MMMddyyyy")
-
-        #Test for empty boxes
-        if ($fName -eq '' -or $lName -eq '' -or $empNumber -eq '' -or $null -eq $jobPostfix) {
-            $ButtonType = [System.Windows.Forms.MessageBoxButtons]::OK
-            $MessageIcon = [System.Windows.Forms.MessageBoxIcon]::Information
-            $MessageBody = "Please fill out the form before pressing done"
-            $MessageTitle = "Error"
-            [System.Windows.Forms.MessageBox]::Show($MessageBody, $MessageTitle, $ButtonType, $MessageIcon) | Out-Null
-            $SCForm.Dispose()
-            AddCasual
-            exit
-        }
-                
-        #Test to see if the user already exists
-        if (userNameExist($fullName)) {
-            [System.Windows.MessageBox]::Show("User already exists!") | Out-Null
-            $SCForm.Dispose()
-            AddCasual
-            exit
-        }
-         
-        #Add user
-        try {
-            New-ADUser -Name $fullName -Enabled $true -sAMaccountName $loginName -UserPrincipalName $loginEmail -AccountPassword(ConvertTo-SecureString $defaultPass -AsPlainText -Force) -ChangePasswordAtLogon $true -Path $OUPath -EmployeeNumber $empNumber -GivenName $fName -Surname $lName -DisplayName $fullName -Description $desc -EmailAddress $displayEmail -Title $jobTitle -Department $dept -Company $Global:company -OtherAttributes @{'extensionAttribute3' = $employeeType; 'extensionAttribute1' = $googleEmail;'extensionAttribute4' = $dob}           
-            if ($null -ne ([ADSISearcher] "(sAMAccountName=$loginName)").FindOne()) {
-                [System.Windows.MessageBox]::Show("Succesfully Added!") | Out-Null
-            }
-        }
-        catch {
-            [System.Windows.MessageBox]::Show("There was an Error creating the user!") | Out-Null
-        }
-        finally {
-            $SCForm.Dispose()
-            MainMenu
-            exit
-        }
-
-    }
-    elseif ($res -eq [System.Windows.Forms.DialogResult]::Abort) {
-        $SCForm.Close()
-        AddUser
-    }
-    exit
-}
-
 function AddNotCasual {
     #Spacing
     $elementRow = 10;
     $rowSpace = 30;
+    $labelLength = 120;
+    $inputColStartPos = $labelLength + $rowSpace;
+
+    $windowSize = '300,280';
 
     #Create Form
     $Form = New-Object system.Windows.Forms.Form
-    $Form.ClientSize = '320,280'
+    $Form.ClientSize = $windowSize
     $Form.text = 'Create a New User'
     $Form.StartPosition = 'CenterScreen'
     $Form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedSingle
@@ -402,12 +215,12 @@ function AddNotCasual {
     #First Name Label
     $fNameLabel = New-Object System.Windows.Forms.label
     $fNameLabel.Location = New-Object System.Drawing.Size(7, $elementRow)
-    $fNameLabel.Size = New-Object System.Drawing.Size(80, 25)
+    $fNameLabel.Size = New-Object System.Drawing.Size($labelLength, 30)
     $fNameLabel.Text = "First Name:"
     $Form.Controls.Add($fNameLabel)
     #First Name TextBox
     $fNameTextbox = New-Object System.Windows.Forms.TextBox
-    $fNameTextbox.Location = New-Object System.Drawing.Size(100, $elementRow)
+    $fNameTextbox.Location = New-Object System.Drawing.Size($inputColStartPos, $elementRow)
     $fNameTextbox.Size = New-Object System.Drawing.Size(120, 20)
     $Form.Controls.Add($fNameTextbox)
 
@@ -415,12 +228,12 @@ function AddNotCasual {
     $elementRow += $rowSpace
     $lNameLabel = New-Object System.Windows.Forms.label
     $lNameLabel.Location = New-Object System.Drawing.Size(7, $elementRow)
-    $lNameLabel.Size = New-Object System.Drawing.Size(80, 25)
+    $lNameLabel.Size = New-Object System.Drawing.Size($labelLength, 30)
     $lNameLabel.Text = "Last Name:"
     $Form.Controls.Add($lNameLabel)
     #Last Name TextBox
     $lNameTextbox = New-Object System.Windows.Forms.TextBox
-    $lNameTextbox.Location = New-Object System.Drawing.Size(100, $elementRow)
+    $lNameTextbox.Location = New-Object System.Drawing.Size($inputColStartPos, $elementRow)
     $lNameTextbox.Size = New-Object System.Drawing.Size(120, 20)
     $Form.Controls.Add($lNameTextbox)
 
@@ -428,31 +241,26 @@ function AddNotCasual {
     $elementRow += $rowSpace
     $dobLabel = New-Object System.Windows.Forms.label
     $dobLabel.Location = New-Object System.Drawing.Size(7, $elementRow)
-    $dobLabel.Size = New-Object System.Drawing.Size(80, 25)
-    $dobLabel.Text = "DOB:"
+    $dobLabel.Size = New-Object System.Drawing.Size($labelLength, 30)
+    $dobLabel.Text = "DOB (yyyy-mm-dd):"
     $Form.Controls.Add($dobLabel)
     #DOB TextBox
     $dobTextbox = New-Object System.Windows.Forms.DateTimePicker
-    $dobTextbox.Location = New-Object System.Drawing.Size(100, $elementRow)
+    $dobTextbox.Location = New-Object System.Drawing.Size($inputColStartPos, $elementRow)
     $dobTextbox.Size = New-Object System.Drawing.Size(120, 20)
     $dobTextbox.Format = [System.Windows.Forms.DateTimePickerFormat]::Short
     $Form.Controls.Add($dobTextbox)
-    $dobHint = New-Object System.Windows.Forms.label
-    $dobHint.Location = New-Object System.Drawing.Size(230, $elementRow)
-    $dobHint.Size = New-Object System.Drawing.Size(80, 25)
-    $dobHint.Text = "(yyyy-mm-dd)"
-    $Form.Controls.Add($dobHint)
 
     #Employee Number Label
     $elementRow += $rowSpace
     $empNoLabel = New-Object System.Windows.Forms.label
     $empNoLabel.Location = New-Object System.Drawing.Size(7, $elementRow)
-    $empNoLabel.Size = New-Object System.Drawing.Size(80, 25)
+    $empNoLabel.Size = New-Object System.Drawing.Size($labelLength, 30)
     $empNoLabel.Text = "Employee No.:"
     $Form.Controls.Add($empNoLabel)
     #Employee Number TextBox
     $empNoTextbox = New-Object System.Windows.Forms.TextBox
-    $empNoTextbox.Location = New-Object System.Drawing.Size(100, $elementRow)
+    $empNoTextbox.Location = New-Object System.Drawing.Size($inputColStartPos, $elementRow)
     $empNoTextbox.Size = New-Object System.Drawing.Size(120, 20)
     $Form.Controls.Add($empNoTextbox)
 
@@ -460,7 +268,7 @@ function AddNotCasual {
     $elementRow += $rowSpace
     $titleLabel = New-Object System.Windows.Forms.label
     $titleLabel.Location = New-Object System.Drawing.Size(7, $elementRow)
-    $titleLabel.Size = New-Object System.Drawing.Size(80, 25)
+    $titleLabel.Size = New-Object System.Drawing.Size($labelLength, 30)
     $titleLabel.Text = "Job Title:"
     $Form.Controls.Add($titleLabel)
     #Add Dropdown list
@@ -468,9 +276,9 @@ function AddNotCasual {
     $jobList.DropDownStyle = [system.Windows.Forms.ComboBoxStyle]::DropDown
     $jobList.text = ""
     $jobList.Size = New-Object System.Drawing.Size(120, 20)
-    $jobList.location = New-Object System.Drawing.Point(100, $elementRow)
+    $jobList.location = New-Object System.Drawing.Point($inputColStartPos, $elementRow)
     # Add the items in the dropdown list
-    @('Teacher', 'Admin Assistant', 'Ed. Assistant', 'Caretaker', 'Bus Driver') | ForEach-Object { [void] $jobList.Items.Add($_) }
+    @('Teacher', 'Admin Assistant', 'Ed. Assistant', 'Caretaker', 'Bus Driver', 'Substitute Staff', 'Substitute Teacher') | ForEach-Object { [void] $jobList.Items.Add($_) }
     $jobList.SelectedIndex = -1
     $Form.Controls.Add($jobList)
 
@@ -478,7 +286,7 @@ function AddNotCasual {
     $elementRow += $rowSpace
     $schoolLabel = New-Object System.Windows.Forms.label
     $schoolLabel.Location = New-Object System.Drawing.Size(7, $elementRow)
-    $schoolLabel.Size = New-Object System.Drawing.Size(80, 25)
+    $schoolLabel.Size = New-Object System.Drawing.Size($labelLength, 30)
     $schoolLabel.Text = "Department:"
     $Form.Controls.Add($schoolLabel)
     #Add Dropdown list
@@ -486,22 +294,25 @@ function AddNotCasual {
     $schoolList.DropDownStyle = [system.Windows.Forms.ComboBoxStyle]::DropDownList
     $schoolList.text = ""
     $schoolList.Size = New-Object System.Drawing.Size(120, 20)
-    $schoolList.location = New-Object System.Drawing.Point(100, $elementRow)
+    $schoolList.location = New-Object System.Drawing.Point($inputColStartPos, $elementRow)
     # Add the items in the dropdown list
-    $Global:allDept | ForEach-Object { [void] $schoolList.Items.Add($_) }
-    $Global:allDeptInTrans | ForEach-Object { [void] $schoolList.Items.Add($_) }
-    $schoolList.Items.Remove("Spare Drivers")
+    $Global:allSchools | ForEach-Object { [void] $schoolList.Items.Add($_) }
+    $Global:allDeptInGsec | ForEach-Object { [void] $schoolList.Items.Add("GSEC - " + $_) }
     $schoolList.SelectedIndex = -1
     $Form.Controls.Add($schoolList)
     $schoolList.Add_SelectedIndexChanged{
         #Modify WhereInSchoolList with department change
-        if ($schoolList.SelectedItem -like '*Garage*') {
-            $pathToOU = "OU=" + $schoolList.SelectedItem + ",OU=Transportation,OU=Users,OU=Board Office,OU=GSSD Network,DC=GSSD,DC=ADS"
-            $OUinSchool = Get-ADOrganizationalUnit -Filter * -SearchBase "$pathToOU" -SearchScope OneLevel | Select-Object Name
-            $arrayOfOUInSchool = $OUinSchool.Name
-            $WhereInSchoolList.Items.Clear()
-            $arrayOfOUInSchool | ForEach-Object { [void] $WhereInSchoolList.Items.Add($_) }
-
+        if ($schoolList.SelectedItem -like '*GSEC*') {
+            $pathToOU = "OU=" + $schoolList.SelectedItem.Replace("GSEC - ", "") + ",OU=GSEC,OU=GSSD Network,DC=GSSD,DC=ADS"
+            try {
+                $OUinSchool = Get-ADOrganizationalUnit -Filter * -SearchBase "$pathToOU" -SearchScope OneLevel | Select-Object Name
+                $arrayOfOUInSchool = $OUinSchool.Name
+                $WhereInSchoolList.Items.Clear()
+                $arrayOfOUInSchool | ForEach-Object { [void] $WhereInSchoolList.Items.Add($_) }
+            }
+            catch {
+                
+            }
         }
         else {
             $pathToOU = "OU=" + $schoolList.SelectedItem + ",OU=Schools,OU=GSSD Network,DC=GSSD,DC=ADS"
@@ -516,7 +327,7 @@ function AddNotCasual {
     $elementRow += $rowSpace
     $WhereInSchoolLabel = New-Object System.Windows.Forms.label
     $WhereInSchoolLabel.Location = New-Object System.Drawing.Size(7, $elementRow)
-    $WhereInSchoolLabel.Size = New-Object System.Drawing.Size(80, 25)
+    $WhereInSchoolLabel.Size = New-Object System.Drawing.Size($labelLength, 30)
     $WhereInSchoolLabel.Text = "OU Path:"
     $Form.Controls.Add($WhereInSchoolLabel)
     #Add Dropdown list
@@ -524,7 +335,7 @@ function AddNotCasual {
     $WhereInSchoolList.DropDownStyle = [system.Windows.Forms.ComboBoxStyle]::DropDownList
     $WhereInSchoolList.text = " " 
     $WhereInSchoolList.Size = New-Object System.Drawing.Size(120, 20)
-    $WhereInSchoolList.location = New-Object System.Drawing.Point(100, $elementRow)
+    $WhereInSchoolList.location = New-Object System.Drawing.Point($inputColStartPos, $elementRow)
     # Add the items in the dropdown list
   
     $WhereInSchoolList.SelectedIndex = -1
@@ -534,14 +345,14 @@ function AddNotCasual {
     $elementRow += $rowSpace
     $empTypeLabel = New-Object System.Windows.Forms.label
     $empTypeLabel.Location = New-Object System.Drawing.Size(7, $elementRow)
-    $empTypeLabel.Size = New-Object System.Drawing.Size(80, 25)
+    $empTypeLabel.Size = New-Object System.Drawing.Size($labelLength, 30)
     $empTypeLabel.Text = "Employee Level:"
     $Form.Controls.Add($empTypeLabel)
     #Add Dropdown list
     $employeeTypeList = New-Object system.Windows.Forms.ComboBox
     $employeeTypeList.DropDownStyle = [system.Windows.Forms.ComboBoxStyle]::DropDownList
     $employeeTypeList.text = " " 
-    $employeeTypeList.location = New-Object System.Drawing.Point(100, $elementRow)
+    $employeeTypeList.location = New-Object System.Drawing.Point($inputColStartPos, $elementRow)
     $employeeTypeList.Size = New-Object System.Drawing.Size(120, 20)
     $employeeTypeList.SelectedIndex = -1
     # Add the items in the dropdown list
@@ -590,31 +401,32 @@ function AddNotCasual {
         $defaultPass = (Get-Date $dob).ToString("MMMddyyyy")
 
         #Find the Base Path
-        if ($schoolList.SelectedItem -eq "GSEC") {
-            $OUBasePath = "OU=Office Users,OU=GSEC,OU=GSSD Network,DC=GSSD,DC=ADS"
-        }
-        elseif ($schoolList.SelectedItem -like "*Garage*") {
-            $OUBasePath = "OU=Transportation,OU=Users,OU=Board Office,OU=GSSD Network,DC=GSSD,DC=ADS"
-            $OUBasePath = "OU=" + $schoolList.SelectedItem + "," + $OUBasePath
-            $OUBasePath = "OU=" + $WhereInSchoolList.SelectedItem + "," + $OUBasePath  
-            $dept = "Transportation"
-            $desc = $schoolList.SelectedItem  
+        if ($schoolList.SelectedItem -like "*GSEC*") {
+            $dept = "GSEC"
+            $desc = $schoolList.SelectedItem.Replace("GSEC - " , "") 
+            $OUBasePath = $Global:gsecOUPath
+            $OUBasePath = "OU=" + $desc + "," + $OUBasePath
+            if ($WhereInSchoolList.SelectedItem -ne "" -and $null -ne $WhereInSchoolList.SelectedItem -and $WhereInSchoolList.SelectedItem -ne " ") {
+                $OUBasePath = "OU=" + $WhereInSchoolList.SelectedItem + "," + $OUBasePath  
+            }
+
         }
         else {
-            $OUBasePath = "OU=Schools,OU=GSSD Network,DC=GSSD,DC=ADS"
+            $OUBasePath = $Global:schoolsOUPath
             $OUBasePath = "OU=" + $schoolList.SelectedItem + "," + $OUBasePath
             $OUBasePath = "OU=" + $WhereInSchoolList.SelectedItem + "," + $OUBasePath
         }
 
-        if ($fName -eq '' -or $lName -eq '' -or $empNumber -eq '' -or $null -eq $OUBasePath -or $jobTitle -eq '' -or $null -eq $dept -or $employeeType -eq '') {
+        if ($fName -eq '' -or $lName -eq '' -or $null -eq $OUBasePath -or $jobTitle -eq '' -or $null -eq $dept -or $employeeType -eq '') {
             $ButtonType = [System.Windows.Forms.MessageBoxButtons]::OK
             $MessageIcon = [System.Windows.Forms.MessageBoxIcon]::Information
             $MessageBody = "Please fill out the form before pressing done."
             $MessageTitle = "Error"
             [System.Windows.Forms.MessageBox]::Show($MessageBody, $MessageTitle, $ButtonType, $MessageIcon) | Out-Null
-            $Form.Dispose()
-            AddNotCasual
-            exit
+            # $Form.Dispose()
+            # AddNotCasual
+            # exit
+            return
         }
 
         #Test to see if the user already exists
@@ -628,13 +440,14 @@ function AddNotCasual {
 
         #Add user
         try {
-            New-ADUser -Name $fullName -Enabled $true -sAMAccountName $loginName -UserPrincipalName $loginEmail -AccountPassword(ConvertTo-SecureString $defaultPass -AsPlainText -Force) -ChangePasswordAtLogon $true -Path $OUBasePath -EmployeeNumber $empNumber -GivenName $fName -Surname $lName -DisplayName $fullName -Description $desc -EmailAddress $displayEmail -Title $jobTitle -Department $dept -Company $Global:company -OtherAttributes @{'extensionAttribute3' = $employeeType; 'extensionAttribute1' = $googleEmail; 'extensionAttribute4' = $dob}
+            New-ADUser -Name $fullName -Enabled $true -sAMAccountName $loginName -UserPrincipalName $loginEmail -AccountPassword(ConvertTo-SecureString $defaultPass -AsPlainText -Force) -ChangePasswordAtLogon $true -Path $OUBasePath -EmployeeNumber $empNumber -GivenName $fName -Surname $lName -DisplayName $fullName -Description $desc -EmailAddress $displayEmail -Title $jobTitle -Department $dept -Company $Global:company -OtherAttributes @{'extensionAttribute3' = $employeeType; 'extensionAttribute1' = $googleEmail; 'extensionAttribute4' = $dob }
             if ($null -ne ([ADSISearcher] "(sAMAccountName=$loginName)").FindOne()) {
                 [System.Windows.MessageBox]::Show("Succesfully Added!") | Out-Null
             }
         }
         catch {
-            [System.Windows.MessageBox]::Show("There was an Error creating the user!") | Out-Null
+            Write-Host $_.Exception.Message;
+            [System.Windows.MessageBox]::Show("There was an Error creating the user!" + $_.Exception.Message) | Out-Null
         }
         finally {
             $Form.Dispose()
@@ -644,7 +457,7 @@ function AddNotCasual {
     }
     elseif ($res -eq [System.Windows.Forms.DialogResult]::Abort) {
         $Form.Dispose()
-        AddUser 
+        MainMenu 
     }
     exit
 }
@@ -717,8 +530,8 @@ function MarkOnLeave($queryName) {
     #Remove white spaces from start and end
     $oldTitle = $oldTitle.Trim() 
 
-    #Set new title with postfix (On Leave)
-    $setTitleAs = $oldTitle + " (On Leave)"
+    #Set new title with postfix $Global:onLeaveMark
+    $setTitleAs = "$oldTitle $Global:onLeaveMark"
     Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object { Set-ADUser $_ -Title ($setTitleAs) } 
 
     #Get new title and show user difference
@@ -751,7 +564,7 @@ function RemoveOnLeave($queryName) {
         MainMenu
         exit
     }
-    $newTitle = $oldTitle -replace "\(On Leave\)", ''
+    $newTitle = $oldTitle.Replace(" $Global:onLeaveMark", "")
     $newTitle = $newTitle.Trim()
     Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object { Set-ADUser $_ -Title ($newTitle) }
 
@@ -855,14 +668,11 @@ function LeaveMenu($queryName) {
             LeaveMenu
             exit
         }
-        elseif ((Get-ADUser -Filter "Name -eq '$queryName'").Count -eq 0) {
+        elseif (-not (userNameExist($queryName))) {
             #No user in AD
-            $queryName = $queryName.replace(' ', '.')
-            if ((Get-ADUser -Filter "Name -eq '$queryName'").Count -eq 0) {
-                [System.Windows.MessageBox]::Show("Could not find a user with that name.") | Out-Null
-                LeaveMenu
-                exit
-            }
+            [System.Windows.MessageBox]::Show("Could not find a user with that name.") | Out-Null
+            LeaveMenu
+            exit
         }
         $title = Get-ADUser -Filter "Name -eq '$queryName'" -Properties * | Select-Object -expand Title
         #Test if user is on leave
@@ -885,14 +695,11 @@ function LeaveMenu($queryName) {
             LeaveMenu
             exit
         }
-        elseif ((Get-ADUser -Filter "Name -eq '$queryName'").Count -eq 0) {
+        elseif (-not (userNameExist($queryName))) {
             #No user in AD
-            $queryName = $queryName.replace(' ', '.')
-            if ((Get-ADUser -Filter "Name -eq '$queryName'").Count -eq 0) {
-                [System.Windows.MessageBox]::Show("No User with that name.") | Out-Null
-                LeaveMenu
-                exit
-            }
+            [System.Windows.MessageBox]::Show("No User with that name.") | Out-Null
+            LeaveMenu
+            exit
         }
         $title = Get-ADUser -Filter "Name -eq '$queryName'" -Properties * | Select-Object -expand Title
         if ($title -notlike '*(On Leave)*') {
@@ -912,15 +719,13 @@ function LeaveMenu($queryName) {
 #DElETE FUNCTIONS START HERE
 function MoveToDeletes($queryName) {
     $queryName = $queryName.Trim()
-    $delDate = "2023 Deletes"
-    $moveToOU = "OU=$delDate,OU=GSSD Network,DC=GSSD,DC=ADS"
     $del = "DEL"
 
     #check if user is already in deletes
     $currPath = Get-ADUser -Filter "Name -eq '$queryName'" -Properties * | Select-Object -expand DistinguishedName
-    $checkPath = "CN=" + $queryName + "," + $moveToOU
+    $checkPath = "CN=" + $queryName + "," + $Global:delFolderOU
     if ($currPath -eq $checkPath) {
-        [System.Windows.MessageBox]::Show("User is already in " + $delDate) | Out-Null
+        [System.Windows.MessageBox]::Show("User is already in " + $Global:delFolderName) | Out-Null
         MainMenu
         exit
     }
@@ -931,27 +736,27 @@ function MoveToDeletes($queryName) {
     Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object { Set-ADUser $_ -Company ($null) }
     Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object { Set-ADUser $_ -Title ($null) }
     Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object { Set-ADUser $_ -Clear "extensionattribute3" }
-    Get-ADUser -Filter "Name -like '$queryName'" | Set-ADUser -Replace @{msExchHideFromAddressLists=$true}
+    Get-ADUser -Filter "Name -like '$queryName'" | Set-ADUser -Replace @{msExchHideFromAddressLists = $true }
     Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object { Disable-ADAccount $_ } 
-    Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object { Move-ADObject $_ -TargetPath "$moveToOu" } 
+    Get-ADUser -Filter "Name -like '$queryName'" | ForEach-Object { Move-ADObject $_ -TargetPath "$Global:delFolderOU" } 
 
     #check is succesfull
     $newPath = Get-ADUser -Filter "Name -eq '$queryName'" -Properties * | Select-Object -expand DistinguishedName
-    $checkPath = "CN=" + $queryName + "," + $moveToOU
+    $checkPath = "CN=" + $queryName + "," + $Global:delFolderOU
     if ($newPath -ne $checkPath) {
-        [System.Windows.MessageBox]::Show("There was an Error moving user to " + $delDate) | Out-Null
+        [System.Windows.MessageBox]::Show("There was an Error moving user to " + $Global:delFolderName) | Out-Null
     }
     else {
-        [System.Windows.MessageBox]::Show("Succesfully Moved User to " + $delDate) | Out-Null
+        [System.Windows.MessageBox]::Show("Succesfully Moved User to " + $Global:delFolderName) | Out-Null
     }
-    GetUserWithName($queryName)
+
     MainMenu
 }
 
 function MoveToDeletesMenu($queryName) {
     #Create the form
     $form = New-Object System.Windows.Forms.Form
-    $form.Text = 'Move $queryName to Deletes'
+    $form.Text = 'Move users to ' + $Global:delFolderName
     $form.Size = New-Object System.Drawing.Size(300, 180)
     $form.StartPosition = 'CenterScreen'
     $form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedSingle
@@ -993,7 +798,7 @@ function MoveToDeletesMenu($queryName) {
             #Nothing entered
             [System.Windows.MessageBox]::Show("Nothing entered.") | Out-Null
             MoveToDeletesMenu
-            exit
+            return
         }
         elseif ((Get-ADUser -Filter "Name -eq '$queryName'").Count -eq 0) {
             #No user in AD
@@ -1264,23 +1069,9 @@ function ResetPasswordMenu($queryName) {
 function MoveTo($queryName, $department, $OUPath, $path) {
     $queryName = $queryName.Trim()
     # Create variables for replacing current ADUser Properties
-    $description = "$department $OUPath"
-    if ($path -like "*Transportation*") {
-        $MBG = 'Melville Bus Garage'
-        $SpareDrivers = 'Spare Drivers'
-        $YBG = 'Yorkton Bus Garage'
-        $jobTitle = 'Bus Driver'
-        if ($department -eq $MBG) {
-            $description = $MBG
-        }
-        elseif ($department -eq $SpareDrivers) {
-            $description = 'Spare Drivers'
-            $jobTitle = 'Spare Driver'
-        }
-        elseif ($department -eq $YBG) {
-            $description = $YBG
-        }
-        $department = 'Transportation'
+    $description = "$department"
+    if ($OUPath -ne "" -and $OUPath -ne " " -and $null -ne $OUPath ) {
+        $description = "$department $OUPath"
     }
     #Student
     if ( $path -like "*OU=Students*") {
@@ -1455,12 +1246,21 @@ function MoveTo($queryName, $department, $OUPath, $path) {
 }
 
 function MoveUser($queryName) {
+
+    #Spacing
+    $marginX = 10;
+    $marginY = 10;
+    $elementRow = 10;
+    $rowSpace = 30;
+    $labelLength = 120;
+    $inputColStartPos = $labelLength + $rowSpace;
+        
     $queryName = $queryName.Trim()
 
     #Create Form
     $form = New-Object System.Windows.Forms.Form
     $form.Text = 'Move User'
-    $mainFormSizeX = 310
+    $mainFormSizeX = 350
     $form.Size = New-Object System.Drawing.Size($mainFormSizeX, 200)
     $form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedSingle
     $form.StartPosition = 'CenterScreen'
@@ -1468,9 +1268,9 @@ function MoveUser($queryName) {
     #Caption Label
     $name = Get-ADUser -Filter "Name -eq '$queryName'" -Properties * | Select-Object -expand Name
     $captionLabel = New-Object System.Windows.Forms.label
-    $captionLabel.Location = New-Object System.Drawing.Size(7, 10)
+    $captionLabel.Location = New-Object System.Drawing.Size($marginX, $elementRow)
     $captionLabel.Size = New-Object System.Drawing.Size(200, 25)
-    $captionLabel.Text = "Moving '$name' to somewhere..."
+    $captionLabel.Text = "Moving $name to..."
     $form.Controls.Add($captionLabel)
    
     $Script:movingWhere = 'e'
@@ -1483,172 +1283,82 @@ function MoveUser($queryName) {
     $form.Controls.Add($isStudent)
     $isStudent.Add_CheckStateChanged{
         if ($isStudent.checked) {
-            #Remove Other Forms
-            $moveToSchool.enabled = $false
-            $moveToGSEC.enabled = $false
-            $moveToTransportation.enabled = $false
-            $form.Controls.Remove($whichSchoolLabel)
-            $form.Controls.Remove($whichSchoolList)
-            $form.Controls.Remove($whereInSchoolLabel)
-            $form.Controls.Remove($whereInSchoolList)
-            $form.Controls.Remove($whereInGSECLabel)
-            $form.Controls.Remove($whereInGSECList)
-            $form.Controls.Remove($whereInTransLabel)
-            $form.Controls.Remove($whereInTransList) 
-            $form.Controls.Remove($whichGarageLabel)
-            $form.Controls.Remove($whichGarageList)
-
-            $form.Size = New-Object System.Drawing.Size($mainFormSizeX, 270)
-            $Script:movingWhere = 'In Grade'        
-            $form.Controls.Add($whichSchoolLabel)
-            $form.Controls.Add($whichSchoolList)
-            $form.Controls.Add($whichGradeLabel)
-            $form.Controls.Add($whichGradeList)
-            $NextButton.Location = New-Object System.Drawing.Point(190, 180)
-            $backButton.Location = New-Object System.Drawing.Point(7, 180)
-            $form.Controls.Add($NextButton)
+            $deptList.Items.Clear();
+            $specificOuList.Items.Clear();
+            $specificOuList.SelectedIndex = -1;
+            $Global:allSchools | ForEach-Object { [void] $deptList.Items.Add($_) }
         }
         else {
-            $moveToSchool.enabled = $true
-            $moveToGSEC.enabled = $true
-            $moveToTransportation.enabled = $true           
-            $form.Controls.Remove($whichSchoolLabel)
-            $form.Controls.Remove($whichSchoolList)
-            $form.Controls.Remove($whichGradeLabel)
-            $form.Controls.Remove($whichGradeList)
+            $deptList.Items.Clear();
+            $specificOuList.Items.Clear();
+            $specificOuList.SelectedIndex = -1;
+            $Global:allSchools | ForEach-Object { [void] $deptList.Items.Add($_) }
+            $gsecDeptPrefix = "GSEC - "
+            $Global:allDeptInGsec | ForEach-Object { [void] $deptList.Items.Add( $gsecDeptPrefix + $_) }
         }
     }
-    $moveToSchool = New-Object System.Windows.Forms.Button
-    $moveToSchool.Location = New-Object System.Drawing.Point(10, 40)
-    $moveToSchool.Size = New-Object System.Drawing.Size(80, 35)
-    $moveToSchool.Text = 'Schools'
-    $form.Controls.Add($moveToSchool)
-    $moveToSchool.Add_Click{
-        #Remove Other Forms
-        $form.Controls.Remove($whereInGSECLabel)
-        $form.Controls.Remove($whereInGSECList)
-        $form.Controls.Remove($whereInTransLabel)
-        $form.Controls.Remove($whereInTransList) 
-        $form.Controls.Remove($whichGarageLabel)
-        $form.Controls.Remove($whichGarageList)
 
-        #Add forms for moving to School
-        $Script:movingWhere = 'Different School'
-        $form.Size = New-Object System.Drawing.Size($mainFormSizeX, 270)
-        $form.Controls.Add($whichSchoolLabel)
-        $form.Controls.Add($whichSchoolList)
-        $form.Controls.Add($whereInSchoolLabel)
-        $form.Controls.Add($whereInSchoolList)
-
-        $NextButton.Location = New-Object System.Drawing.Point(190, 180)
-        $backButton.Location = New-Object System.Drawing.Point(7, 180)
-        $form.Controls.Add($NextButton)
-    }
-
-    $moveToGSEC = New-Object System.Windows.Forms.Button
-    $moveToGSEC.Location = New-Object System.Drawing.Point(100, 40)
-    $moveToGSEC.Size = New-Object System.Drawing.Size(80, 35)
-    $moveToGSEC.Text = 'GSEC'
-    $form.Controls.Add($moveToGSEC)
-    $moveToGSEC.Add_Click{
-        #Remove Other Forms
-        $form.Controls.Remove($whichSchoolLabel)
-        $form.Controls.Remove($whichSchoolList)
-        $form.Controls.Remove($whereInSchoolLabel)
-        $form.Controls.Remove($whereInSchoolList)
-        $form.Controls.Remove($whereInTransLabel)
-        $form.Controls.Remove($whereInTransList) 
-        $form.Controls.Remove($whichGarageLabel)
-        $form.Controls.Remove($whichGarageList)
-
-        #Add forms for moving to GSEC
-        $form.Size = New-Object System.Drawing.Size($mainFormSizeX, 230)
-        $Script:movingWhere = 'In GSEC'
-        $form.Controls.Add($whereInGSECLabel)
-        $form.Controls.Add($whereInGSECList)
-        $backButton.Location = New-Object System.Drawing.Point(7, 140)
-        $NextButton.Location = New-Object System.Drawing.Point(190, 140)
-        $form.Controls.Add($NextButton)
-    }
-
-    $moveToTransportation = New-Object System.Windows.Forms.Button
-    $moveToTransportation.Location = New-Object System.Drawing.Point(190, 40)
-    $moveToTransportation.Size = New-Object System.Drawing.Size(90, 35)
-    $moveToTransportation.Text = 'Transportation'
-    $form.Controls.Add($moveToTransportation)
-    $moveToTransportation.Add_Click{
-        #Remove Other Forms
-        $form.Controls.Remove($whichSchoolLabel)
-        $form.Controls.Remove($whichSchoolList)
-        $form.Controls.Remove($whereInSchoolLabel)
-        $form.Controls.Remove($whereInSchoolList)
-        $form.Controls.Remove($whereInGSECLabel)
-        $form.Controls.Remove($whereInGSECList)
-
-        #Add forms for moving to Transportation
-        $Script:movingWhere = 'In Transportation'
-        $form.Size = New-Object System.Drawing.Size($mainFormSizeX, 270)
-        $form.Controls.Add($whereInTransLabel)
-        $form.Controls.Add($whereInTransList) 
-        $form.Controls.Add($whichGarageLabel)
-        $form.Controls.Add($whichGarageList)
-        $backButton.Location = New-Object System.Drawing.Point(7, 180)
-        $NextButton.Location = New-Object System.Drawing.Point(190, 180)
-        $form.Controls.Add($NextButton)
-    }
-
-    # MOVE TO SCHOOLS
-    #List of Schools
-    $whichSchoolLabel = New-Object System.Windows.Forms.label
-    $whichSchoolLabel.Location = New-Object System.Drawing.Size(7, 103)
-    $whichSchoolLabel.Size = New-Object System.Drawing.Size(90, 20)
-    $whichSchoolLabel.Text = "Choose School:"
+    $elementRow += $rowSpace;
+    #List of Department
+    $departmentLabel = New-Object System.Windows.Forms.label
+    $departmentLabel.Location = New-Object System.Drawing.Size($marginX, $elementRow)
+    $departmentLabel.Size = New-Object System.Drawing.Size($labelLength, 20)
+    $departmentLabel.Text = "Choose Department:"
+    $form.Controls.Add($departmentLabel);
+    
     #Add Dropdown list
-    $whichSchoolList = New-Object system.Windows.Forms.ComboBox
-    $whichSchoolList.DropDownStyle = [system.Windows.Forms.ComboBoxStyle]::DropDown
-    $whichSchoolList.Size = New-Object System.Drawing.Size(180, 20)
-    $whichSchoolList.location = New-Object System.Drawing.Point(100, 100)
+    $deptList = New-Object system.Windows.Forms.ComboBox
+    $deptList.DropDownStyle = [system.Windows.Forms.ComboBoxStyle]::DropDown
+    $deptList.Size = New-Object System.Drawing.Size(180, 20)
+    $deptList.location = New-Object System.Drawing.Point($inputColStartPos, $elementRow)
     # Add the items in the dropdown list
-    $whichSchoolList.SelectedIndex = -1
-    $Global:allDept | ForEach-Object { [void] $whichSchoolList.Items.Add($_) }
-    $whichSchoolList.Add_SelectedIndexChanged{
-        $whichSchoolLabel.ForeColor = 'Black'            
-        #Modify WhereInSchoolList with department change
-        $WhereInSchoolList.SelectedIndex = -1
-        $pathToOU = "OU=" + $whichSchoolList.SelectedItem + ",OU=Schools,OU=GSSD Network,DC=GSSD,DC=ADS"
-        $OUinSchool = Get-ADOrganizationalUnit -Filter * -SearchBase "$pathToOU" -SearchScope OneLevel | Select-Object Name
-        $arrayOfOUInSchool = $OUinSchool.Name
-        $WhereInSchoolList.Items.Clear()
-        $arrayOfOUInSchool | ForEach-Object { [void] $WhereInSchoolList.Items.Add($_) }
-
-        #GRADE when user is a student
-        try {
-            $whichGradeList.SelectedIndex = -1
-            $pathToOU = "OU=Students,OU=" + $whichSchoolList.SelectedItem + ",OU=Schools,OU=GSSD Network,DC=GSSD,DC=ADS"
-            $GradeinSchool = Get-ADOrganizationalUnit -Filter * -SearchBase "$pathToOU" -SearchScope OneLevel | Select-Object Name
-            $arrayOfGradeInSchool = $GradeinSchool.Name
-            $whichGradeList.Items.Clear()
-            $arrayOfGradeInSchool | ForEach-Object { [void] $whichGradeList.Items.Add($_) }
+    $deptList.SelectedIndex = -1
+    $Global:allSchools | ForEach-Object { [void] $deptList.Items.Add($_) }
+    $gsecDeptPrefix = "GSEC - "
+    $Global:allDeptInGsec | ForEach-Object { [void] $deptList.Items.Add( $gsecDeptPrefix + $_) }
+    $deptList.Add_SelectedIndexChanged{
+        $specificOuList.SelectedIndex = -1
+        if ($isStudent.checked) {
+            $specificOuList.Items.Clear()
+            $pathToOU = "OU=Students,OU=" + $deptList.SelectedItem + ",$Global:schoolsOUPath"
+            $OUinSchool = Get-ADOrganizationalUnit -Filter * -SearchBase "$pathToOU" -SearchScope OneLevel | Select-Object Name
+            if ($OUinSchool.Length -gt 0) {
+                $arrayOfOU = $OUinSchool.Name
+                $arrayOfOU | ForEach-Object { [void] $specificOuList.Items.Add($_) }
+            }
         }
-        catch {
-            $whichSchoolLabel.ForeColor = 'Red' 
-            $whichGradeList.Items.Clear()       
+        else {
+            if ($deptList.SelectedItem -like "*GSEC*") {
+                $shortenedOU = $deptList.SelectedItem.Replace( $gsecDeptPrefix, "")
+                $pathToOU = "OU=" + $shortenedOU + ",$Global:gsecOUPath"
+            }
+            else {
+                $pathToOU = "OU=" + $deptList.SelectedItem + ",$Global:schoolsOUPath"
+            }
+            $specificOuList.Items.Clear()
+            $OUinSchool = Get-ADOrganizationalUnit -Filter * -SearchBase "$pathToOU" -SearchScope OneLevel | Select-Object Name
+            if ($OUinSchool.Length -gt 0) {
+                $arrayOfOU = $OUinSchool.Name
+                $arrayOfOU | ForEach-Object { [void] $specificOuList.Items.Add($_) }
+            }
         }
     }
 
+    $form.Controls.Add($deptList);
+
+    $elementRow += $rowSpace;
     #List of Schools
-    $whereInSchoolLabel = New-Object System.Windows.Forms.label
-    $whereInSchoolLabel.Location = New-Object System.Drawing.Size(7, 143)
-    $whereInSchoolLabel.Size = New-Object System.Drawing.Size(90, 25)
-    $whereInSchoolLabel.Text = "Where in school:"
-    #$form.Controls.Add($whereInSchoolLabel)
+    $specificOuLabel = New-Object System.Windows.Forms.label
+    $specificOuLabel.Location = New-Object System.Drawing.Size($marginX, $elementRow)
+    $specificOuLabel.Size = New-Object System.Drawing.Size($labelLength, 25)
+    $specificOuLabel.Text = "Select OU:"
+    $form.Controls.Add($specificOuLabel)
     #Add Dropdown list
-    $whereInSchoolList = New-Object system.Windows.Forms.ComboBox
-    $whereInSchoolList.DropDownStyle = [system.Windows.Forms.ComboBoxStyle]::DropDown
-    $whereInSchoolList.Size = New-Object System.Drawing.Size(180, 20)
-    $whereInSchoolList.location = New-Object System.Drawing.Point(100, 140)
-    # Add the items in the dropdown list
-    #$form.Controls.Add($whereInSchoolList)
+    $specificOuList = New-Object system.Windows.Forms.ComboBox
+    $specificOuList.DropDownStyle = [system.Windows.Forms.ComboBoxStyle]::DropDown
+    $specificOuList.location = New-Object System.Drawing.Point($inputColStartPos, $elementRow)
+    $specificOuList.Size = New-Object System.Drawing.Size(180, 20)
+    $form.Controls.Add($specificOuList)
     
     #if student
     #List of Schools
@@ -1663,64 +1373,6 @@ function MoveUser($queryName) {
     $whichGradeList.location = New-Object System.Drawing.Point(100, 140)
     # Add the items in the dropdown list
 
-    # MOVE TO GSEC
-    #List of Schools
-    $whereInGSECLabel = New-Object System.Windows.Forms.label
-    $whereInGSECLabel.Location = New-Object System.Drawing.Size(7, 103)
-    $whereInGSECLabel.Size = New-Object System.Drawing.Size(90, 20)
-    $whereInGSECLabel.Text = "Where in GSEC:"
-    #Add Dropdown list
-    $whereInGSECList = New-Object system.Windows.Forms.ComboBox
-    $whereInGSECList.DropDownStyle = [system.Windows.Forms.ComboBoxStyle]::DropDown
-    $whereInGSECList.Size = New-Object System.Drawing.Size(180, 20)
-    $whereInGSECList.location = New-Object System.Drawing.Point(100, 100)
-    # Add the items in the dropdown list
-    $whereInGSECList.SelectedIndex = -1
-    $Global:allDeptInGsec | ForEach-Object { [void] $whereInGSECList.Items.Add($_) }
-
-    # MOVE TO TRANSPORTATION
-    #List of Schools
-    $whereInTransLabel = New-Object System.Windows.Forms.label
-    $whereInTransLabel.Location = New-Object System.Drawing.Size(7, 103)
-    $whereInTransLabel.Size = New-Object System.Drawing.Size(90, 20)
-    $whereInTransLabel.Text = "Location:"
-    #Add Dropdown list
-    $whereInTransList = New-Object system.Windows.Forms.ComboBox
-    $whereInTransList.DropDownStyle = [system.Windows.Forms.ComboBoxStyle]::DropDown
-    $whereInTransList.Size = New-Object System.Drawing.Size(180, 20)
-    $whereInTransList.location = New-Object System.Drawing.Point(100, 100)
-    # Add the items in the dropdown list
-    $whereInTransList.SelectedIndex = -1
-    $Global:allDeptInTrans | ForEach-Object { [void] $whereInTransList.Items.Add($_) }
-    $whereInTransList.Add_SelectedIndexChanged{
-        #Modify whereInTransList with department change
-        if ($whereInTransList.SelectedItem -eq "Spare Drivers") {
-            $whichGarageList.Enabled = $false
-        }
-        else {
-            $whichGarageList.Enabled = $true
-            $whichGarageList.SelectedIndex = -1
-            $pathToOU = "OU=" + $whereInTransList.SelectedItem + ",OU=Transportation,OU=Users,OU=Board Office,OU=GSSD Network,DC=GSSD,DC=ADS"
-            $OUinTrans = Get-ADOrganizationalUnit -Filter * -SearchBase "$pathToOU" -SearchScope OneLevel | Select-Object Name
-            $arrayOfOUInTrans = $OUinTrans.Name
-            $whichGarageList.Items.Clear()
-            $arrayOfOUInTrans | ForEach-Object { [void] $whichGarageList.Items.Add($_) }
-        }
-    }
-
-    #List of transportation OU
-    $whichGarageLabel = New-Object System.Windows.Forms.label
-    $whichGarageLabel.Location = New-Object System.Drawing.Size(7, 143)
-    $whichGarageLabel.Size = New-Object System.Drawing.Size(90, 25)
-    $whichGarageLabel.Text = "Garage:"
-    #Add Dropdown list
-    $whichGarageList = New-Object system.Windows.Forms.ComboBox
-    $whichGarageList.DropDownStyle = [system.Windows.Forms.ComboBoxStyle]::DropDown
-    $whichGarageList.Size = New-Object System.Drawing.Size(180, 20)
-    $whichGarageList.location = New-Object System.Drawing.Point(100, 140)
-    $whichGarageList.Enabled = $false
-
-
     #Button
     $backButton = New-Object System.Windows.Forms.Button
     $backButton.Location = New-Object System.Drawing.Point(10, 120)
@@ -1728,54 +1380,77 @@ function MoveUser($queryName) {
     $backButton.Text = 'Back'
     $backButton.DialogResult = [System.Windows.Forms.DialogResult]::Abort
     $form.Controls.Add($backButton)
-
+    
     #Button
     $NextButton = New-Object System.Windows.Forms.Button
+    $NextButton.Location = New-Object System.Drawing.Point(100, 120)
     $NextButton.Size = New-Object System.Drawing.Size(90, 35)
     $NextButton.Text = 'Next'
     $NextButton.DialogResult = [System.Windows.Forms.DialogResult]::OK
+    $form.Controls.Add($NextButton)
 
     $result = $form.ShowDialog()
     if ($result -eq [System.Windows.Forms.DialogResult]::OK) {
-        #move to different school
-        switch ($movingWhere) {
-            'Different School' {
-                $department = $whichSchoolList.SelectedItem
-                $OUPath = $whereInSchoolList.SelectedItem
-                $path = "OU=$OUPath,OU=$department,OU=Schools,OU=GSSD Network,DC=GSSD,DC=ADS"
+        #Move User
+        $department = $deptList.SelectedItem
 
-                MoveTo $queryName $department $OUPath $path 
-            }
-            'In GSEC' {
-                $department = 'GSEC'
-                $OUPath = $whereInGSECList.SelectedItem
-                $path = "OU=$OUPath,OU=$department,OU=GSSD Network,DC=GSSD,DC=ADS"
-
-                MoveTo $queryName $department $OUPath $path 
-            }            
-            'In Transportation' {
-                $department = $whereInTransList.SelectedItem
-
-                if ($department -eq "Spare Drivers") {
-                    #Spare drivers does not have any OU inside it.
-                    $path = "OU=$department,OU=Transportation,OU=Users,OU=Board Office,OU=GSSD Network,DC=GSSD,DC=ADS"
-                    $OUPath = ''
-                }
-                else {
-                    $OUPath = $whichGarageList.SelectedItem
-                    $path = "OU=$OUPath,OU=$department,OU=Transportation,OU=Users,OU=Board Office,OU=GSSD Network,DC=GSSD,DC=ADS"
-                }
-                MoveTo $queryName $department $OUPath $path 
-            }
-            'In Grade' {
-                $department = $whichSchoolList.SelectedItem
-                $OUPath = $whichGradeList.SelectedItem
-                $path = "OU=$OUPath,OU=Students,OU=$department,OU=Schools,OU=GSSD Network,DC=GSSD,DC=ADS"
-
-                MoveTo $queryName $department $OUPath $path 
-            }
-
+        $basePath = $Global:schoolsOUPath
+        if ($department -like "*GSEC*") {
+            $department = $department.Replace( $gsecDeptPrefix, "")
+            $basePath = $Global:gsecOUPath
+            
         }
+        $OUPath = $specificOuList.SelectedItem
+        $path = "OU=$OUPath,OU=$department,$basePath"
+        if ($OUPath -eq "" -or $OUPath -eq " " -or $null -eq $OUPath) {
+            # No specific OU under department.
+            $path = "OU=$department,$basePath"
+        }
+
+        if ($isStudent.checked) {
+            $basePath = $Global:schoolsOUPath
+            $OUPath = $specificOuList.SelectedItem
+            $path = "OU=$OUPath,OU=Students,OU=$department,$basePath"
+        }  
+
+        MoveTo $queryName $department $OUPath $path
+        # switch ($movingWhere) {
+        #     'Different School' {
+        #         $department = $deptList.SelectedItem
+        #         $OUPath = $specificOuList.SelectedItem
+        #         $path = "OU=$OUPath,OU=$department,OU=Schools,OU=GSSD Network,DC=GSSD,DC=ADS"
+
+        #         MoveTo $queryName $department $OUPath $path 
+        #     }
+        #     'In GSEC' {
+        #         $department = 'GSEC'
+        #         $OUPath = $whereInGSECList.SelectedItem
+        #         $path = "OU=$OUPath,OU=$department,OU=GSSD Network,DC=GSSD,DC=ADS"
+
+        #         MoveTo $queryName $department $OUPath $path 
+        #     }            
+        #     'In Transportation' {
+        #         $department = $whereInTransList.SelectedItem
+
+        #         if ($department -eq "Spare Drivers") {
+        #             #Spare drivers does not have any OU inside it.
+        #             $path = "OU=$department,OU=Transportation,OU=Users,OU=Board Office,OU=GSSD Network,DC=GSSD,DC=ADS"
+        #             $OUPath = ''
+        #         }
+        #         else {
+        #             $OUPath = $whichGarageList.SelectedItem
+        #             $path = "OU=$OUPath,OU=$department,OU=Transportation,OU=Users,OU=Board Office,OU=GSSD Network,DC=GSSD,DC=ADS"
+        #         }
+        #         MoveTo $queryName $department $OUPath $path 
+        #     }
+        #     'In Grade' {
+        #         $department = $whichSchoolList.SelectedItem
+        #         $OUPath = $whichGradeList.SelectedItem
+        #         $path = "OU=$OUPath,OU=Students,OU=$department,OU=Schools,OU=GSSD Network,DC=GSSD,DC=ADS"
+
+        #         MoveTo $queryName $department $OUPath $path 
+        #     }
+        # }
 
     }
     elseif ($result -eq [System.Windows.Forms.DialogResult]::Abort) {
@@ -1835,8 +1510,8 @@ function MoveUserMenu($queryName) {
         elseif (-not (userNameExist($queryName))) {
             #No user in AD
             [System.Windows.MessageBox]::Show("No User with that name.") | Out-Null
-             MoveUserMenu
-                exit
+            MoveUserMenu
+            exit
         }
 
         #User exists, continue
@@ -1862,54 +1537,47 @@ function MainMenu {
 
     #Find user stuff
     $findLabel = New-Object System.Windows.Forms.Label
-    $findLabel.Location = New-Object System.Drawing.Point(90, 20)
-    $findLabel.Size = New-Object System.Drawing.Size(100, 20)
-    $findLabel.Text = 'Enter some letters:'
+    $findLabel.Location = New-Object System.Drawing.Point(12, 18)
+    $findLabel.Size = New-Object System.Drawing.Size(250, 20)
+    $findLabel.Font = 'Microsoft Sans Serif,11'
+    $findLabel.Text = 'Enter Name:'
     $form.Controls.Add($findLabel)
 
     $findTextBox = New-Object System.Windows.Forms.TextBox
-    $findTextBox.Location = New-Object System.Drawing.Point(40, 40)
-    $findTextBox.Size = New-Object System.Drawing.Size(200, 20)
+    $findTextBox.Location = New-Object System.Drawing.Point(15, 40)
+    $findTextBox.Size = New-Object System.Drawing.Size(185, 20)
     $form.Controls.Add($findTextBox)
 
-
-    $findButton = New-Object System.Windows.Forms.Button
-    $findButton.Location = New-Object System.Drawing.Point(50, 70)
-    $findButton.Size = New-Object System.Drawing.Size(75, 23)
-    $findButton.Text = 'Get Details'
-    $findButton.Add_Click{
-        if ($findTextBox.Text -ne "") {
-            GetUserWithName($findTextBox.Text)
-        }
-    }
-    $form.Controls.Add($findButton)
-
-    #Find user stuff
-    $orLabel = New-Object System.Windows.Forms.Label
-    $orLabel.Location = New-Object System.Drawing.Point(130, 75)
-    $orLabel.Size = New-Object System.Drawing.Size(25, 20)
-    $orLabel.ForeColor = 'Red'
-    $orLabel.Text = 'OR'
-    $form.Controls.Add($orLabel)
-
-    $getUserListButton = New-Object System.Windows.Forms.Button
-    $getUserListButton.Location = New-Object System.Drawing.Point(155, 70)
-    $getUserListButton.Size = New-Object System.Drawing.Size(75, 23)
-    $getUserListButton.Text = 'Show Users'
-    $getUserListButton.Add_Click{
+    $getUserDetail = New-Object System.Windows.Forms.Button
+    $getUserDetail.Location = New-Object System.Drawing.Point(205, 40)
+    $getUserDetail.Size = New-Object System.Drawing.Size(65, 18)
+    $getUserDetail.Font = 'Microsoft Sans Serif,10'
+    $getUserDetail.Text = 'Search'
+    $getUserDetail.Add_Click{
         if ($findTextBox.Text -ne "" -and $findTextBox.TextLength -gt 2) {
+            $queryName = $findTextBox.Text
             $ShowNames.Items.Clear()
-            $ShowNames.Items.AddRange("Checking AD...")
-
+            $ShowNames.Items.AddRange("Looking for $queryName...")
+            Start-Sleep -Seconds 0.1
+            
+            $userExist = userNameExist($queryName)
+            if ($userExist) {
+                GetUserWithName($queryName)
+                $ShowNames.Items.Clear()
+                return  
+            } 
+            
+            $ShowNames.Items.AddRange("Could not find user with the name.")
+            $ShowNames.Items.AddRange("Searching possible matches...")
+            Start-Sleep -Seconds 0.2
             #Count number of users
-            $numberOfUsers = GetUserCount($findTextBox.Text)
+            $numberOfUsers = GetUserCount($queryName)
+
             if ($numberOfUsers -ne 0) {
-                $ShowNames.Items.AddRange("Loading $numberOfUsers User(s)...")
-                $userName = $findTextBox.Text
-                $users = Get-ADUser -Filter "Name -like '*$userName*'" -Property *  | Sort-Object Name | Select-Object -ExpandProperty Name                
+                $users = Get-ADUser -Filter "Name -like '*$queryName*'" -Property *  | Sort-Object Name | Select-Object -ExpandProperty Name                
                 $ShowNames.Items.Clear()
                 $ShowNames.Items.AddRange($users)
-                $countLabel.Text = $numberOfUsers                 
+                $countLabel.Text = "Found $numberOfUsers."                 
             }
             else {
                 $countLabel.Text = $numberOfUsers                 
@@ -1918,7 +1586,13 @@ function MainMenu {
             }
         }
     }
-    $form.Controls.Add($getUserListButton)
+    $findTextBox.Add_KeyDown({
+            if ($_.KeyCode -eq [System.Windows.Forms.Keys]::Enter) {
+                $getUserDetail.PerformClick()
+            }
+        })
+    # add enter press down
+    $form.Controls.Add($getUserDetail)
 
     #Find user stuff
     $countLabel = New-Object System.Windows.Forms.Label
@@ -1929,8 +1603,8 @@ function MainMenu {
     $form.Controls.Add($countLabel)
 
     $ShowNames = New-Object System.Windows.Forms.ListBox
-    $ShowNames.Size = New-Object System.Drawing.Size(215, 215)
-    $ShowNames.Location = New-Object System.Drawing.Size(305, 20) 
+    $ShowNames.Size = New-Object System.Drawing.Size(225, 215)
+    $ShowNames.Location = New-Object System.Drawing.Size(290, 20) 
     $disabledItem1 = "No Users Found."
     $ShowNames.Add_SelectedIndexChanged({
             $selectedItem = $ShowNames.SelectedItem
@@ -1943,17 +1617,25 @@ function MainMenu {
 
     #Horizontal line
     $lineLabel = New-Object System.Windows.Forms.Label
-    $lineLabel.Location = New-Object System.Drawing.Point(0, 110)
+    $lineLabel.Location = New-Object System.Drawing.Point(0, 80)
     $lineLabel.Text = " "
     $lineLabel.BorderStyle = [System.Windows.Forms.BorderStyle]::Fixed3D;
     $lineLabel.AutoSize = $false
     $lineLabel.Height = 2
-    $lineLabel.Width = 300
+    $lineLabel.Width = 290
     $form.Controls.Add($lineLabel)
+
+    #Find user stuff
+    $otherLabel = New-Object System.Windows.Forms.Label
+    $otherLabel.Location = New-Object System.Drawing.Point(15, 90)
+    $otherLabel.Size = New-Object System.Drawing.Size(250, 20)
+    $otherLabel.Font = 'Microsoft Sans Serif,8'
+    $otherLabel.Text = 'Other Actions'
+    $form.Controls.Add($otherLabel)
 
     #Create user stuff
     $newUserButton = New-Object System.Windows.Forms.Button
-    $newUserButton.Location = New-Object System.Drawing.Point(15, 120)
+    $newUserButton.Location = New-Object System.Drawing.Point(15, 115)
     $newUserButton.Size = New-Object System.Drawing.Size(75, 50)
     $newUserButton.Text = 'New User'
     $newUserButton.DialogResult = [System.Windows.Forms.DialogResult]::OK
@@ -1961,7 +1643,7 @@ function MainMenu {
 
     #mark on leave stuff
     $onLeaveButton = New-Object System.Windows.Forms.Button
-    $onLeaveButton.Location = New-Object System.Drawing.Point(105, 120)
+    $onLeaveButton.Location = New-Object System.Drawing.Point(105, 115)
     $onLeaveButton.Size = New-Object System.Drawing.Size(75, 50)
     $onLeaveButton.Text = 'On-Leave'
     $onLeaveButton.DialogResult = [System.Windows.Forms.DialogResult]::YES
@@ -1969,7 +1651,7 @@ function MainMenu {
 
     #Move to deletes
     $delButton = New-Object System.Windows.Forms.Button
-    $delButton.Location = New-Object System.Drawing.Point(195, 120)
+    $delButton.Location = New-Object System.Drawing.Point(195, 115)
     $delButton.Size = New-Object System.Drawing.Size(75, 50)
     $delButton.Text = 'Move To Deletes'
     $delButton.DialogResult = [System.Windows.Forms.DialogResult]::NO
@@ -1977,7 +1659,7 @@ function MainMenu {
 
     #Reset Password
     $restPassButton = New-Object System.Windows.Forms.Button
-    $restPassButton.Location = New-Object System.Drawing.Point(15, 180)
+    $restPassButton.Location = New-Object System.Drawing.Point(15, 175)
     $restPassButton.Size = New-Object System.Drawing.Size(75, 50)
     $restPassButton.Text = 'Reset Password'
     $restPassButton.DialogResult = [System.Windows.Forms.DialogResult]::RETRY
@@ -1985,7 +1667,7 @@ function MainMenu {
 
     #mark on leave stuff
     $moveUserButton = New-Object System.Windows.Forms.Button
-    $moveUserButton.Location = New-Object System.Drawing.Point(105, 180)
+    $moveUserButton.Location = New-Object System.Drawing.Point(105, 175)
     $moveUserButton.Size = New-Object System.Drawing.Size(75, 50)
     $moveUserButton.Text = 'Move User'
     $moveUserButton.DialogResult = [System.Windows.Forms.DialogResult]::IGNORE
@@ -2005,7 +1687,7 @@ function MainMenu {
     $result = $form.ShowDialog()
 
     if ($result -eq [System.Windows.Forms.DialogResult]::OK) {
-        AddUser
+        AddNotCasual
     }
     elseif ($result -eq [System.Windows.Forms.DialogResult]::YES) {
         LeaveMenu($findTextBox.Text)
@@ -2027,14 +1709,21 @@ function MainMenu {
 #Global variables
 $Global:defaultPass = "Gssdstaff1"
 $Global:company = "GSSD"
+$Global:onLeaveMark = "(On Leave)"
 
-$arrOfDepartments = Get-ADOrganizationalUnit -Filter * -SearchBase "OU=Schools,OU=GSSD Network,DC=GSSD,DC=ADS" -SearchScope OneLevel | Select-Object Name
-$Global:allDept = $arrOfDepartments.Name
+$Global:delFolderName = "Deleted Users";
+$Global:delFolderOU = "OU=$Global:delFolderName,OU=GSSD Network,DC=GSSD,DC=ADS"
 
-$arrOfDepartmentsInGsec = Get-ADOrganizationalUnit -Filter * -SearchBase "OU=GSEC,OU=GSSD Network,DC=GSSD,DC=ADS" -SearchScope OneLevel | Select-Object Name
+$Global:schoolsOUPath = "OU=Schools,OU=GSSD Network,DC=GSSD,DC=ADS"
+$arrOfSchools = Get-ADOrganizationalUnit -Filter * -SearchBase $Global:schoolsOUPath -SearchScope OneLevel | Select-Object Name
+$Global:allSchools = $arrOfSchools.Name
+
+$Global:gsecOUPath = "OU=GSEC,OU=GSSD Network,DC=GSSD,DC=ADS"
+$arrOfDepartmentsInGsec = Get-ADOrganizationalUnit -Filter * -SearchBase $Global:gsecOUPath -SearchScope OneLevel | Select-Object Name
 $Global:allDeptInGsec = $arrOfDepartmentsInGsec.Name
 
-$arrOfDepartmentsInTrans = Get-ADOrganizationalUnit -Filter * -SearchBase "OU=Transportation,OU=Users,OU=Board Office,OU=GSSD Network,DC=GSSD,DC=ADS" -SearchScope OneLevel | Select-Object Name
+$Global:transpoOUPath = "OU=Transportation,OU=GSEC,OU=GSSD Network,DC=GSSD,DC=ADS"
+$arrOfDepartmentsInTrans = Get-ADOrganizationalUnit -Filter * -SearchBase $Global:transpoOUPath -SearchScope OneLevel | Select-Object Name
 $Global:allDeptInTrans = $arrOfDepartmentsInTrans.Name
 
 #Start of Main 
