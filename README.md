@@ -1,8 +1,8 @@
-# 👋 Welcome to QuickAD
+# QuickAD
 
-**QuickAD** is a lightweight PowerShell GUI tool that helps you manage Active Directory users faster — no need to dig through the AD console or memorize command-line syntax.
+**QuickAD** is a lightweight PowerShell GUI tool designed to make managing Active Directory users faster and easier—no need to navigate the AD console or memorize complex command-line syntax.
 
-Whether you're resetting passwords, moving users between OUs, or just checking someone's details, QuickAD makes those tasks quicker and easier.
+Whether you're resetting passwords, moving users between OUs, or checking user details, QuickAD streamlines the process.
 
 ![PowerShell](https://img.shields.io/badge/Built%20with-PowerShell-blue)
 ![Windows](https://img.shields.io/badge/Platform-Windows%2010%20%2F%2011-lightgrey)
@@ -10,105 +10,126 @@ Whether you're resetting passwords, moving users between OUs, or just checking s
 
 ---
 
-## ✨ Features
-
+## Features
 QuickAD currently supports:
 
-- 🔍 **View user details** by entering a username or full name
-- 🔄 **Reset user passwords** to a default or custom value
-- 🗃️ **Move users to a different Organizational Unit (OU)**
-- 🧑‍🤝‍🧑 **List users** with similar names (for easy identification)
-- ✏️ **Modify user attributes**, such as basic profile fields
-- ❌ **Delete users** (either permanently or move to a "Deleted" OU for safety)
-
----
-## Quick Notes
-
-This is nowhere near done, just a quick powershell script I made to help me learn powershell. You'll have to do some tweaking to set it up for yourself.
-There's no config file yet, you'll have to change things like OU Paths, default pass, names, etc.
-
-## 🖥️ How It Works
-
-QuickAD is an **interactive PowerShell GUI** with pre-defined functions. Once launched, you can enter user details and perform tasks through buttons and input fields.
+- View user details by entering a username or full name  
+- Reset user passwords to a default or custom value  
+- Move users to a different Organizational Unit (OU)  
+- List users with similar names for easy identification  
+- Modify user attributes such as profile fields  
+- Delete users (permanently or move to a "Deleted" OU)
 
 ---
 
-## ⚙️ Requirements
+## ⚠️ Important Notes
 
-- ✅ Windows 10 or 11
-- ✅ Access to Active Directory (requires RSAT or AD module installed)
-- ✅ AD credentials with permission to view/modify user objects
+**This is not a plug-and-play solution.**  
+QuickAD is an experimental script created as a learning project. It will **require customization** to work in your environment. Specifically, you will need to adjust:
 
----
+- OU paths  
+- Default passwords  
+- Attribute names (if your AD schema is customized)  
+- Any hardcoded references that apply to your organization  
 
-## 🚀 Getting Started
-
-### 🔧 Option 1: Run the Script Directly
-
-1. Download `QuickAD.ps1` from this repository.
-2. Right-click and select **Run with PowerShell**.
-3. If prompted, sign in with an authorized AD credential.
-
-### 🖱️ Option 2: Use the Shortcut
-
-1. Download or clone this repository.
-2. Copy the included **QuickAD shortcut** to your desktop.
-3. Double-click the shortcut to launch the app quickly.
+There is currently **no configuration file**—all changes must be made directly in the script (`QuickAD.ps1`).
 
 ---
 
-## 💡 Usage Example
+## How It Works
 
-- Need to verify a user's **Date of Birth** or department quickly? Just type their name, hit enter, and view their details.
-- User forgot their password? Use QuickAD to **reset it to your company’s default**, or set a custom password on the fly.
-- Want to reorganize users into different departments? Move them between **OUs** in a few clicks.
+QuickAD is an interactive PowerShell GUI that uses pre-defined functions to interact with Active Directory. You input a user or select an action, and the GUI handles the AD logic for you.
 
 ---
 
-## 🖼️ Screenshots
+## Requirements
 
-### 🔐 Main Interface
+- Windows 10 or 11  
+- PowerShell with RSAT / Active Directory module installed  
+- AD credentials with permission to view and modify user accounts  
+
+---
+
+## Getting Started
+
+### Option 1: Run the Script Directly
+
+1. Download `QuickAD.ps1` from this repository.  
+2. Right-click and select **Run with PowerShell**.  
+3. If prompted, enter valid AD credentials.  
+
+### Option 2: Use the Shortcut
+
+1. Clone or download the repository.  
+2. Copy the included **QuickAD shortcut** to your desktop.  
+3. Double-click the shortcut to quickly launch the tool.  
+
+---
+
+## Configuration
+
+To customize QuickAD for your organization:
+
+- Open `QuickAD.ps1` in your text editor  
+- Locate sections with OU paths, passwords, and labels  
+- Modify values to suit your environment  
+
+> There is currently no external config file, so customization is done directly in the script.
+
+---
+
+## Usage Examples
+
+- Look up a user’s department or job title in seconds  
+- Reset a user's password to your organization's default  
+- Move users into different OUs without using the AD console  
+
+---
+
+## Screenshots
+
+### Main Interface
 ![Main Interface](images/main-interface.png)
 
-### 🔍 User Details Example
+### User Details View
 ![User Details](images/user-details.png)
 
-### 🔄 Reset Password Function
+### Reset Password
 ![Reset Password](images/reset-password.png)
 
-### 🗃️ Move User to OU
+### Move User to OU
 ![Move User to OU](images/move-ou.png)
 
 ---
 
-## 🛡️ Security & Error Handling
+## Security & Error Handling
 
-- You may be prompted to sign in with AD credentials when opening the app.
-- All errors are displayed interactively within the app—no hidden failures.
-- Currently, there is **no persistent logging**, but errors are shown in real-time.
-
----
-
-## 📝 License & Attribution
-
-This project is open and free to use or modify.
-
-You're welcome to customize and redistribute QuickAD for your own needs.  
-If you find it helpful, a small mention or credit would be appreciated. 🤝
+- Prompts for AD credentials (if not already authenticated)  
+- Displays real-time error messages in the GUI  
+- No persistent logging is implemented at this time  
 
 ---
 
-## 📂 File Info
+## License & Attribution
 
-- `QuickAD.ps1` – The full, self-contained PowerShell GUI script
-
----
-
-## 📫 Contact
-
-Have suggestions, issues, or want to contribute?  
-Feel free to open an [Issue](https://github.com/your-repo/issues) or submit a pull request.
+This project is free to use and modify for personal or internal use.  
+If you find it useful, credit is appreciated but not required.
 
 ---
 
-## 🙌 Thanks for using QuickAD!
+## File Info
+
+- `QuickAD.ps1` – Full, self-contained PowerShell GUI script
+
+---
+
+## Contact
+
+Have suggestions or issues?  
+Feel free to open an issue or contribute via pull request.
+
+---
+
+## Final Note
+
+QuickAD is a tool built for learning and convenience—**not a polished enterprise-grade solution**. You are encouraged to inspect the code, test it thoroughly, and tailor it to your specific environment before using it in any production context.
