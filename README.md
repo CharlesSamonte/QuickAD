@@ -1,6 +1,8 @@
-# 🔐 QuickAD
+# 👋 Welcome to QuickAD
 
-**QuickAD** is a simple, interactive GUI tool built with PowerShell to speed up day-to-day Active Directory user management tasks. Designed for IT admins and support staff, it lets you perform common AD operations quickly without diving into the AD console or writing commands manually.
+**QuickAD** is a lightweight PowerShell GUI tool that helps you manage Active Directory users faster — no need to dig through the AD console or memorize command-line syntax.
+
+Whether you're resetting passwords, moving users between OUs, or just checking someone's details, QuickAD makes those tasks quicker and easier.
 
 ![PowerShell](https://img.shields.io/badge/Built%20with-PowerShell-blue)
 ![Windows](https://img.shields.io/badge/Platform-Windows%2010%20%2F%2011-lightgrey)
@@ -60,8 +62,6 @@ QuickAD is an **interactive PowerShell GUI** with pre-defined functions. Once la
 ---
 
 ## 🖼️ Screenshots
-
-> _Make sure your images are saved in an `images/` folder in your repo. Replace the filenames if needed._
 
 ### 🔐 Main Interface
 ![Main Interface](images/main-interface.png)
