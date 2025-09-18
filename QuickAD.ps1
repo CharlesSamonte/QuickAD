@@ -56,29 +56,6 @@ function GetUserWithName($queryName) {
 
     $UserQuery = Get-ADUser -Filter "Name -eq '$queryName'" -Properties *
 
-    #Get Properties
-    #$DisplayName = $UserQuery | Select-Object -expand DisplayName
-    $fName = $UserQuery | Select-Object -expand GivenName
-    $lName = $UserQuery | Select-Object -expand Surname
-    $employeeNo = $UserQuery | Select-Object -expand EmployeeNumber
-    $employeeType = $UserQuery | Select-Object -expand extensionAttribute3
-    $birthdate = $UserQuery | Select-Object -expand extensionAttribute4
-    $grade = $UserQuery | Select-Object -expand extensionAttribute2
-    $jobTitle = $UserQuery | Select-Object -expand Title
-    $email = $UserQuery | Select-Object -expand UserPrincipalName
-    $logonName = $UserQuery | Select-Object -expand sAMAccountName
-
-    $comp = $UserQuery | Select-Object -expand Company
-    $dept = $UserQuery | Select-Object -expand Department
-    $desc = $UserQuery | Select-Object -expand Description
-    $loc = $UserQuery | Select-Object -expand CanonicalName
-    $lastLogonDate = $UserQuery | Select-Object -expand LastLogonDate
-
-    if ($null -eq $lastLogonDate) {
-        $lastLogonDate = "N/A"
-    }
-    $accountStatus = $UserQuery | Select-Object -expand enabled
-
     $form = New-Object System.Windows.Forms.Form
     $form.Text = "User Information"
     $form.Size = New-Object System.Drawing.Size(600, 400)
@@ -98,23 +75,11 @@ function GetUserWithName($queryName) {
     $dataGridView.Columns[$propertyColumn].Width = 5
 
     # Add rows
-    $dataGridView.Rows.Add("Name", "$fName $lName")
-    $dataGridView.Rows.Add("Logon Name", $logonName)
-    $dataGridView.Rows.Add("Email", $email)
-    $dataGridView.Rows.Add("Job Title", $jobTitle)
-    if ($jobTitle -like "*Student*") {
-        $dataGridView.Rows.Add("Grade", $grade)
+    foreach ($key in $Global:defaultDetailsMap.Keys) {
+        $attribute = $defaultDetailsMap[$key]
+        $value = $UserQuery | Select-Object -ExpandProperty $attribute
+        $dataGridView.Rows.Add($key, $value)
     }
-    else {
-        $dataGridView.Rows.Add("Birth Date", $birthdate)
-        $dataGridView.Rows.Add("Employee No", $employeeNo)
-        $dataGridView.Rows.Add("Employee Level", $employeeType)
-    }
-    $dataGridView.Rows.Add("Description", $desc)
-    $dataGridView.Rows.Add("Department", $dept)
-    $dataGridView.Rows.Add("Location", $loc)
-    $dataGridView.Rows.Add("Last Logon Date", $lastLogonDate)
-    $dataGridView.Rows.Add("Enabled", $accountStatus)
 
     # Create a smaller button
     $button = New-Object System.Windows.Forms.Button
@@ -196,7 +161,7 @@ function GetAllUserInfoWithName($queryName) {
 }
 ############################################################################
 #ADDING NEW USER FUNCTIONS START HERE
-function AddNotCasual {
+function CreateNewUser {
     #Spacing
     $elementRow = 10;
     $rowSpace = 30;
@@ -424,7 +389,7 @@ function AddNotCasual {
             $MessageTitle = "Error"
             [System.Windows.Forms.MessageBox]::Show($MessageBody, $MessageTitle, $ButtonType, $MessageIcon) | Out-Null
             # $Form.Dispose()
-            # AddNotCasual
+            # CreateNewUser
             # exit
             return
         }
@@ -433,7 +398,7 @@ function AddNotCasual {
         if (userNameExist($fullName)) {
             [System.Windows.MessageBox]::Show("User already exists!") | Out-Null
             $Form.Dispose()
-            AddNotCasual
+            CreateNewUser
             exit
         }
 
@@ -458,53 +423,6 @@ function AddNotCasual {
     elseif ($res -eq [System.Windows.Forms.DialogResult]::Abort) {
         $Form.Dispose()
         MainMenu 
-    }
-    exit
-}
-
-function AddUser {
-    # Create a new form
-    $Form1 = New-Object system.Windows.Forms.Form
-    $Form1.ClientSize = '250,150'
-    $Form1.text = 'Create a New User'
-    $Form1.StartPosition = 'CenterScreen'
-    $Form1.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedSingle
-
-    #Sub Button
-    $subButton = New-Object System.Windows.Forms.Button
-    $subButton.Location = New-Object System.Drawing.Point(40, 20)
-    $subButton.Size = New-Object System.Drawing.Size(75, 50)
-    $subButton.Text = 'Sub/Casual'
-    $subButton.DialogResult = [System.Windows.Forms.DialogResult]::Yes
-    $Form1.Controls.Add($subButton)
-
-    #None Sub Button
-    $notSubButton = New-Object System.Windows.Forms.Button
-    $notSubButton.Location = New-Object System.Drawing.Point(130, 20)
-    $notSubButton.Size = New-Object System.Drawing.Size(75, 50)
-    $notSubButton.Text = 'Full-Time'
-    $notSubButton.DialogResult = [System.Windows.Forms.DialogResult]::No
-    $Form1.Controls.Add($notSubButton)
-
-    #Add Next button
-    $BackButton = New-Object System.Windows.Forms.Button
-    $BackButton.Location = New-Object System.Drawing.Point(60, 100)
-    $BackButton.Size = New-Object System.Drawing.Size(130, 33)
-    $BackButton.Text = "Back"
-    $BackButton.DialogResult = [System.Windows.Forms.DialogResult]::Abort
-    $Form1.Controls.Add($BackButton)
-
-    # Display the form
-    $SCResult = $Form1.ShowDialog()
-
-    if ($SCResult -eq [System.Windows.Forms.DialogResult]::Yes) {
-        AddCasual
-    }
-    elseif ($SCResult -eq [System.Windows.Forms.DialogResult]::No) {
-        AddNotCasual
-    }
-    elseif ($SCResult -eq [System.Windows.Forms.DialogResult]::Abort) {
-        MainMenu
     }
     exit
 }
@@ -1414,44 +1332,6 @@ function MoveUser($queryName) {
         }  
 
         MoveTo $queryName $department $OUPath $path
-        # switch ($movingWhere) {
-        #     'Different School' {
-        #         $department = $deptList.SelectedItem
-        #         $OUPath = $specificOuList.SelectedItem
-        #         $path = "OU=$OUPath,OU=$department,OU=Schools,OU=GSSD Network,DC=GSSD,DC=ADS"
-
-        #         MoveTo $queryName $department $OUPath $path 
-        #     }
-        #     'In GSEC' {
-        #         $department = 'GSEC'
-        #         $OUPath = $whereInGSECList.SelectedItem
-        #         $path = "OU=$OUPath,OU=$department,OU=GSSD Network,DC=GSSD,DC=ADS"
-
-        #         MoveTo $queryName $department $OUPath $path 
-        #     }            
-        #     'In Transportation' {
-        #         $department = $whereInTransList.SelectedItem
-
-        #         if ($department -eq "Spare Drivers") {
-        #             #Spare drivers does not have any OU inside it.
-        #             $path = "OU=$department,OU=Transportation,OU=Users,OU=Board Office,OU=GSSD Network,DC=GSSD,DC=ADS"
-        #             $OUPath = ''
-        #         }
-        #         else {
-        #             $OUPath = $whichGarageList.SelectedItem
-        #             $path = "OU=$OUPath,OU=$department,OU=Transportation,OU=Users,OU=Board Office,OU=GSSD Network,DC=GSSD,DC=ADS"
-        #         }
-        #         MoveTo $queryName $department $OUPath $path 
-        #     }
-        #     'In Grade' {
-        #         $department = $whichSchoolList.SelectedItem
-        #         $OUPath = $whichGradeList.SelectedItem
-        #         $path = "OU=$OUPath,OU=Students,OU=$department,OU=Schools,OU=GSSD Network,DC=GSSD,DC=ADS"
-
-        #         MoveTo $queryName $department $OUPath $path 
-        #     }
-        # }
-
     }
     elseif ($result -eq [System.Windows.Forms.DialogResult]::Abort) {
         MoveUserMenu
@@ -1687,7 +1567,7 @@ function MainMenu {
     $result = $form.ShowDialog()
 
     if ($result -eq [System.Windows.Forms.DialogResult]::OK) {
-        AddNotCasual
+        CreateNewUser
     }
     elseif ($result -eq [System.Windows.Forms.DialogResult]::YES) {
         LeaveMenu($findTextBox.Text)
@@ -1704,12 +1584,10 @@ function MainMenu {
 }
 
 ############################################################################
-#INITIAL SEQUENCE
-
+#CONFIG
 #Global variables
 $Global:company = "GSSD"
 $Global:onLeaveMark = "(On Leave)"
-
 $Global:delFolderName = "Deleted Users";
 $Global:delFolderOU = "OU=$Global:delFolderName,OU=GSSD Network,DC=GSSD,DC=ADS"
 
@@ -1724,6 +1602,23 @@ $Global:allDeptInGsec = $arrOfDepartmentsInGsec.Name
 $Global:transpoOUPath = "OU=Transportation,OU=GSEC,OU=GSSD Network,DC=GSSD,DC=ADS"
 $arrOfDepartmentsInTrans = Get-ADOrganizationalUnit -Filter * -SearchBase $Global:transpoOUPath -SearchScope OneLevel | Select-Object Name
 $Global:allDeptInTrans = $arrOfDepartmentsInTrans.Name
+
+$Global:defaultDetailsMap = [ordered]@{
+    "First Name"      = "GivenName"
+    "Last Name"       = "Surname"
+    "Employee No"     = "EmployeeNumber"
+    "Employee Type"   = "extensionAttribute3"
+    "Birthdate"       = "extensionAttribute4"
+    "Grade"           = "extensionAttribute2"
+    "Job Title"       = "Title"
+    "Email"           = "UserPrincipalName"
+    "Logon Name"      = "sAMAccountName"
+    "Company"         = "Company"
+    "Department"      = "Department"
+    "Description"     = "Description"
+    "Location"        = "CanonicalName"
+    "Last Logon Date" = "LastLogonDate"
+}
 
 #Start of Main 
 MainMenu
