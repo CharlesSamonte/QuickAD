@@ -22,6 +22,10 @@ QuickAD currently supports:
 - ❌ **Delete users** (either permanently or move to a "Deleted" OU for safety)
 
 ---
+## Quick Notes
+
+This is nowhere near done, just a quick powershell script I made to help me learn powershell. You'll have to do some tweaking to set it up for yourself.
+There's no config file yet, you'll have to change things like OU Paths, default pass, names, etc.
 
 ## 🖥️ How It Works
 
