@@ -1707,7 +1707,6 @@ function MainMenu {
 #INITIAL SEQUENCE
 
 #Global variables
-$Global:defaultPass = "Gssdstaff1"
 $Global:company = "GSSD"
 $Global:onLeaveMark = "(On Leave)"
 
